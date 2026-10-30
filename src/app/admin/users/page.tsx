@@ -3,6 +3,8 @@ import { fmt, fmtDate } from "@/lib/helpers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   // In Next.js 15, params must be awaited
   const resolvedParams = await params;

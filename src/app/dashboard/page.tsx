@@ -5,6 +5,8 @@ import { Bar } from "@/components/Bar";
 import { fmt, savingsPct, loanBarColor, loanPct, fmtDate } from "@/lib/helpers";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function Dashboard() {
   const s = await getServerSession(authOptions);
   const user = await prisma.user.findUnique({
