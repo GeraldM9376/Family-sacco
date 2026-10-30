@@ -12,7 +12,7 @@ export async function approvePayment(paymentId: string) {
 
   const { userId, type, amount } = payment;
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     // 1. Update the Payment Status
     await tx.payment.update({
       where: { id: paymentId },
@@ -105,7 +105,7 @@ export async function createLoan(formData: FormData) {
   const user = await prisma.user.findUnique({ where: { idNumber } });
   if (!user) throw new Error("User not found");
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     // 1. Create the loan record
     await tx.loan.create({
       data: {

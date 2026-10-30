@@ -16,14 +16,15 @@ export default async function Dashboard() {
   });
   if (!user) return <p>Loading…</p>;
 
-  const normalLoans = user.loans.filter((l) => l.type === "normal");
-  const emergencyLoans = user.loans.filter((l) => l.type === "emergency");
+  // Add types here to fix the TypeScript error
+  const normalLoans = user.loans.filter((l: any) => l.type === "normal");
+  const emergencyLoans = user.loans.filter((l: any) => l.type === "emergency");
   
-  const normalTotal = normalLoans.reduce((a, l) => a + (l.amountToPay - l.paidAmount), 0);
-  const emergencyTotal = emergencyLoans.reduce((a, l) => a + (l.amountToPay - l.paidAmount), 0);
+  const normalTotal = normalLoans.reduce((a: number, l: any) => a + (l.amountToPay - l.paidAmount), 0);
+  const emergencyTotal = emergencyLoans.reduce((a: number, l: any) => a + (l.amountToPay - l.paidAmount), 0);
   
-  const normalOriginal = normalLoans.reduce((a, l) => a + l.amountToPay, 0);
-  const emergencyOriginal = emergencyLoans.reduce((a, l) => a + l.amountToPay, 0);
+  const normalOriginal = normalLoans.reduce((a: number, l: any) => a + l.amountToPay, 0);
+  const emergencyOriginal = emergencyLoans.reduce((a: number, l: any) => a + l.amountToPay, 0);
 
   return (
     <div className="space-y-8">
@@ -112,7 +113,7 @@ export default async function Dashboard() {
             <p className="text-sm text-gray-500">No payments waiting for approval.</p>
           ) : (
             <div className="space-y-3">
-              {user.payments.map((p) => (
+              {user.payments.map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between rounded-xl bg-amber-50 p-4 border border-amber-100">
                   <div>
                     <p className="text-sm font-bold text-amber-900 capitalize">{p.type} Payment</p>
@@ -132,7 +133,7 @@ export default async function Dashboard() {
             <p className="text-sm text-gray-500">You have no active loans.</p>
           ) : (
             <div className="space-y-3">
-              {user.loans.map((l) => (
+              {user.loans.map((l: any) => (
                 <div key={l.id} className="flex items-center justify-between rounded-xl bg-gray-50 p-4 border border-gray-200">
                   <div>
                     <p className="text-sm font-bold text-gray-900 capitalize">{l.type} Loan</p>

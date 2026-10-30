@@ -34,7 +34,7 @@ export default async function AdminDashboard() {
           <p className="text-gray-500 text-center py-8">All caught up! No pending payments.</p>
         ) : (
           <div className="space-y-4">
-            {pendingPayments.map((p) => (
+            {pendingPayments.map((p: any) => (
               <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-gray-200 p-5 bg-gray-50">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
