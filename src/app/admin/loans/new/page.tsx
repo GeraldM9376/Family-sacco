@@ -42,7 +42,8 @@ export default function NewLoanPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-sm font-bold text-gray-700">Date Issued</label>
-            <input name="issuedOn" type="date" required defaultValue={new Date().toISOString().split("T")[0]}
+            {/* Notice: defaultValue is removed here */}
+            <input name="issuedOn" type="date" required
               className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500" />
           </div>
           <div>

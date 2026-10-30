@@ -4,8 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { fmt } from "@/lib/helpers";
 import { submitPayment } from "./actions";
 import { redirect } from "next/navigation";
+import { connection } from "next/server"; // 1. Added
 
 export default async function PayPage() {
+  // 2. Added to prevent prerender errors
+  await connection();
+
   const s = await getServerSession(authOptions);
   const user = await prisma.user.findUnique({
     where: { id: (s!.user as any).id },
@@ -14,7 +18,6 @@ export default async function PayPage() {
 
   if (!user) return null;
 
-  // Server Action wrapper to handle redirect on success
   async function handleSubmit(formData: FormData) {
     "use server";
     await submitPayment(formData);
@@ -113,7 +116,8 @@ export default async function PayPage() {
               </div>
               <div>
                 <label className="mb-1 block text-sm font-bold text-gray-700">Date Paid</label>
-                <input name="paidOn" type="date" required defaultValue={new Date().toISOString().split("T")[0]}
+                {/* 3. Removed dynamic date here */}
+                <input name="paidOn" type="date" required
                   className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500" />
               </div>
             </div>
