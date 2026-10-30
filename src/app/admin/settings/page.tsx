@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { saveSettings } from "../actions";
 import { Message } from "@/components/Message";
+import { connection } from "next/server"; // Added
 
 export default async function SettingsPage() {
+  await connection(); // Added
+
   const setting = await prisma.setting.findUnique({ where: { id: 1 } });
 
   async function handleSubmit(formData: FormData) {

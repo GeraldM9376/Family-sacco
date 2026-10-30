@@ -4,10 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { Bar } from "@/components/Bar";
 import { fmt, savingsPct, loanBarColor, loanPct, fmtDate } from "@/lib/helpers";
 import Link from "next/link";
-
-export const dynamic = "force-dynamic";
+import { connection } from "next/server"; // 1. Import this
 
 export default async function Dashboard() {
+  // 2. Tell Next.js to wait for a real request
+  await connection();
+
   const s = await getServerSession(authOptions);
   const user = await prisma.user.findUnique({
     where: { id: (s!.user as any).id },
@@ -18,7 +20,6 @@ export default async function Dashboard() {
   });
   if (!user) return <p>Loading…</p>;
 
-  // Add types here to fix the TypeScript error
   const normalLoans = user.loans.filter((l: any) => l.type === "normal");
   const emergencyLoans = user.loans.filter((l: any) => l.type === "emergency");
   

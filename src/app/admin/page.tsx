@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { fmt } from "@/lib/helpers";
 import Link from "next/link";
+import { connection } from "next/server";
 
 export default async function AdminUsersPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  await connection();
+
   const resolvedParams = await searchParams;
   const q = resolvedParams.q || "";
 
