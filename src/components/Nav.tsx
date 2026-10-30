@@ -29,9 +29,9 @@ export function Nav() {
         </>
       )}
       <button
-        onClick={() => signOut({ callbackUrl: "/login" })}
-        className="rounded-lg bg-red-500 px-3 py-1.5 text-sm text-white hover:bg-red-600"
-      >
+       onClick={() => signOut({ callbackUrl: "/login", redirect: true })}
+       className="rounded-lg bg-red-500 px-3 py-1.5 text-sm text-white hover:bg-red-600"
+       >
         Logout
       </button>
     </nav>
