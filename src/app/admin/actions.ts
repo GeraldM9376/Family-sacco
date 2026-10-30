@@ -152,7 +152,7 @@ export async function adminRecordPayment(formData: FormData) {
   const user = await prisma.user.findUnique({ where: { idNumber } });
   if (!user) throw new Error("User not found");
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     // 1. Create the payment as APPROVED immediately
     await tx.payment.create({
       data: {

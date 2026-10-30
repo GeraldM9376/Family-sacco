@@ -64,7 +64,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
             {user.loans.length === 0 ? (
               <p className="text-sm text-gray-500">No loans taken.</p>
             ) : (
-              user.loans.map((loan) => (
+              user.loans.map((loan: any) => (
                 <div key={loan.id} className="rounded-xl border border-gray-200 p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-bold capitalize text-gray-800">{loan.type} Loan</span>
@@ -93,7 +93,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
             {user.payments.length === 0 ? (
               <p className="text-sm text-gray-500">No payments recorded.</p>
             ) : (
-              user.payments.map((p) => (
+              user.payments.map((p: any) => (
                 <div key={p.id} className="flex justify-between items-center rounded-xl bg-gray-50 p-3 border border-gray-100">
                   <div>
                     <p className="font-bold text-gray-800 capitalize">{p.type} - {fmt(p.amount)}</p>
