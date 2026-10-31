@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { fmt, fmtDate } from "@/lib/helpers";
 import { approvePayment, rejectPayment } from "./actions";
 import { connection } from "next/server";
+import { SubmitButton } from "@/components/SubmitButton"; // Added
 
 export default async function AdminDashboard({
   searchParams,
@@ -16,8 +17,6 @@ export default async function AdminDashboard({
   const currentMonth = resolvedParams.month ? parseInt(resolvedParams.month) : now.getMonth();
   const currentYear = resolvedParams.year ? parseInt(resolvedParams.year) : now.getFullYear();
 
-  // Force East Africa Time (EAT) for accurate filtering
-  // EAT is UTC+3
   const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0) - 3 * 60 * 60 * 1000);
   const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999) - 3 * 60 * 60 * 1000);
 
@@ -110,9 +109,9 @@ export default async function AdminDashboard({
             <option value={2025}>2025</option>
             <option value={2026}>2026</option>
           </select>
-          <button className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">
+          <SubmitButton className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">
             View Report
-          </button>
+          </SubmitButton>
         </form>
       </div>
 
@@ -155,7 +154,9 @@ export default async function AdminDashboard({
                       "use server";
                       await approvePayment(p.id);
                     }} className="flex-1 md:flex-none">
-                      <button className="w-full rounded-xl bg-emerald-500 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-600 transition">Approve</button>
+                      <SubmitButton className="w-full rounded-xl bg-emerald-500 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-600 transition">
+                        Approve
+                      </SubmitButton>
                     </form>
 
                     <form action={async (formData) => {
@@ -165,7 +166,9 @@ export default async function AdminDashboard({
                     }} className="flex-1 md:flex-none flex gap-2">
                       <input name="reason" placeholder="Reason..." required
                         className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
-                      <button className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-200 transition">Reject</button>
+                      <SubmitButton className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-200 transition">
+                        Reject
+                      </SubmitButton>
                     </form>
                   </div>
                 </div>
