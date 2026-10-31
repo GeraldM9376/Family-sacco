@@ -8,16 +8,16 @@ export async function POST(req: Request) {
   if (!rateLimit(`forgot:${ip}`, 5, 60_000))
     return NextResponse.json({ error: "Too many attempts." }, { status: 429 });
 
-  const { email } = await req.json();
-  if (!email) return NextResponse.json({ error: "Email required." }, { status: 400 });
+  const { idNumber } = await req.json();
+  if (!idNumber) return NextResponse.json({ error: "ID Number is required." }, { status: 400 });
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  // Find the user by ID Number instead of Email
+  const user = await prisma.user.findUnique({ where: { idNumber } });
   if (!user)
-    return NextResponse.json({ error: "No account with that email." }, { status: 404 });
+    return NextResponse.json({ error: "No account found with that ID Number." }, { status: 404 });
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  // Changed to 5 minutes
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); 
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
   await prisma.otp.upsert({
     where: { userId: user.id },
@@ -25,6 +25,8 @@ export async function POST(req: Request) {
     create: { userId: user.id, code, expiresAt },
   });
 
-  await sendOtp(email, code);
-  return NextResponse.json({ ok: true });
+  // Send the code to the email saved in their database profile
+  await sendOtp(user.email, code);
+  
+  return NextResponse.json({ ok: true, email: user.email });
 }

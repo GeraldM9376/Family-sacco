@@ -36,8 +36,11 @@ model Payment {
   id           String   @id @default(cuid())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type         String
-  amount       Float
+  
+  breakdown    String
+  totalAmount  Float
+  
+  method       String
   payerName    String
   paidOn       DateTime
   status       String   @default("pending")

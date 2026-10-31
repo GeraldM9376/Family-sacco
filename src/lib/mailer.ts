@@ -24,16 +24,17 @@ export async function sendWelcomeEmail(email: string, name: string, password: st
   await resend.emails.send({
     from: "MAWEGA SACCO <onboarding@resend.dev>",
     to: email,
-    subject: "Welcome to MAWEGA SACCO",
+    subject: "Welcome to MAWEGA SACCO - Your Login Details",
     html: `
-      <div style="font-family:sans-serif;padding:24px;max-width:500px;margin:auto">
+      <div style="font-family:sans-serif;padding:24px;max-width:500px;margin:auto;border:1px solid #e5e7eb;border-radius:12px">
         <h2 style="color:#4338ca">Welcome to MAWEGA SACCO!</h2>
-        <p>Hello ${name},</p>
-        <p>Your account has been created successfully. Here are your login details:</p>
-        <div style="padding:16px;background:#f3f4f6;border-radius:8px;margin:16px 0;">
-          <p><strong>Password:</strong> <span style="font-size:20px;font-weight:bold;color:#4338ca;">${password}</span></p>
+        <p>Hello <strong>${name}</strong>,</p>
+        <p>Your account has been created successfully. Here is the password you registered with:</p>
+        <div style="padding:16px;background:#f3f4f6;border-radius:8px;margin:16px 0;text-align:center;">
+          <p style="margin:0;font-size:14px;color:#6b7280">Your Password</p>
+          <p style="margin:8px 0 0 0;font-size:24px;font-weight:bold;color:#4338ca;">${password}</p>
         </div>
-        <p>You can change this password later inside your account.</p>
+        <p>You can now log in using your ID Number and this password.</p>
       </div>
     `,
   });

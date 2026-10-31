@@ -3,13 +3,14 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-  const { email, code, newPassword } = await req.json();
+  // Accept idNumber instead of email
+  const { idNumber, code, newPassword } = await req.json();
 
   if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}$/.test(newPassword || ""))
     return NextResponse.json({ error: "Weak password." }, { status: 400 });
 
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { idNumber },
     include: { otp: true },
   });
 
