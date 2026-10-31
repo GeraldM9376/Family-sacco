@@ -10,7 +10,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { idNumber, type, principal, amountToPay, issuedOn, dueDate } = await req.json();
+    const body = await req.json();
+    const { idNumber, type, issuedOn, dueDate } = body;
+    
+    // Convert string inputs to actual numbers
+    const principal = Number(body.principal);
+    const amountToPay = Number(body.amountToPay);
 
     if (!idNumber || !type || isNaN(principal) || isNaN(amountToPay)) {
       return NextResponse.json({ error: "Invalid loan details." }, { status: 400 });
@@ -27,8 +32,8 @@ export async function POST(req: Request) {
         data: {
           userId: user.id,
           type,
-          principal,
-          amountToPay,
+          principal,      // Now a number
+          amountToPay,    // Now a number
           issuedOn: new Date(issuedOn),
           dueDate: new Date(dueDate),
         },

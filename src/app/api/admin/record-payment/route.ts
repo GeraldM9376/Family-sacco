@@ -10,8 +10,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { idNumber, type, amount, payerName, paidOn } = await req.json();
+    const body = await req.json();
+    const { idNumber, type, payerName, paidOn } = body;
     
+    // Convert string input to actual number
+    const amount = Number(body.amount);
+
     if (!idNumber || !type || isNaN(amount) || amount <= 0) {
       return NextResponse.json({ error: "Invalid payment details." }, { status: 400 });
     }
