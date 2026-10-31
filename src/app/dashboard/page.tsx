@@ -75,19 +75,34 @@ export default async function Dashboard() {
   return (
     <div className="space-y-8 pb-12">
       
-      {/* Header with Greeting & Details */}
-      <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
+      {/* Personalized Header with Clear Details */}
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-white">
             {greeting}, <span className="text-indigo-400">{firstName}</span>
           </h1>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-sm text-slate-400">
-            <p>ID: <span className="text-slate-200 font-mono">{user.idNumber}</span></p>
-            <p>Phone: <span className="text-slate-200">{user.phone}</span></p>
-            <p>Joined: <span className="text-slate-200">{fmtDate(user.createdAt)}</span></p>
+          
+          {/* User Details Badges */}
+          <div className="flex flex-wrap items-center gap-3 mt-4">
+            <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg">
+              <span className="text-slate-400 text-xs font-semibold uppercase">ID</span>
+              <span className="text-white font-mono font-bold text-sm">{user.idNumber}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg">
+              <span className="text-slate-400 text-xs font-semibold uppercase">Phone</span>
+              <span className="text-white font-semibold text-sm">{user.phone}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg">
+              <span className="text-slate-400 text-xs font-semibold uppercase">Joined</span>
+              <span className="text-white font-semibold text-sm">{fmtDate(user.createdAt)}</span>
+            </div>
           </div>
         </div>
-        <Link href="/dashboard/pay" className="rounded-xl bg-indigo-600 px-6 py-2.5 text-center font-bold text-white hover:bg-indigo-500 transition shadow-lg">
+
+        <Link 
+          href="/dashboard/pay" 
+          className="w-full md:w-auto rounded-xl bg-indigo-600 px-6 py-3 text-center font-bold text-white hover:bg-indigo-500 transition shadow-lg"
+        >
           Make a Payment
         </Link>
       </div>
@@ -118,7 +133,7 @@ export default async function Dashboard() {
       <div>
         <h2 className="text-xl font-bold text-white mb-4">Financial Progress</h2>
         <div className="grid gap-6 md:grid-cols-3">
-          {/* Savings Card */}
+          
           <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
             <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-1">Savings Progress</p>
             <p className="mt-2 text-3xl font-extrabold text-white mb-6">{fmt(user.savingsTotal)}</p>
@@ -131,7 +146,6 @@ export default async function Dashboard() {
             </div>
           </div>
 
-          {/* Normal Loan Card */}
           <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
             <div className="flex justify-between items-start mb-1">
               <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Normal Loan Debt</p>
@@ -149,7 +163,6 @@ export default async function Dashboard() {
             </div>
           </div>
 
-          {/* Emergency Loan Card */}
           <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
             <div className="flex justify-between items-start mb-1">
               <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Emergency Loan Debt</p>

@@ -88,13 +88,13 @@ export default async function AdminDashboard({
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-500">
+    <div className="space-y-8 pb-12">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Dashboard Overview</h1>
-          <p className="text-slate-400 mt-1 font-medium">Manage Sacco operations and view financial reports.</p>
+          <h1 className="text-3xl font-extrabold text-white">Admin Dashboard</h1>
+          <p className="text-slate-400 mt-1">Manage approvals and view monthly Sacco reports.</p>
         </div>
         
         <form className="flex gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-700 shadow-sm">
@@ -114,41 +114,31 @@ export default async function AdminDashboard({
         </form>
       </div>
 
-      {/* Master Financial Metrics */}
+      {/* Master Metrics */}
       <div className="grid gap-6 md:grid-cols-3">
         <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
-          <p className="text-slate-400 font-semibold text-sm uppercase tracking-wider mb-2">Total Monthly Contributions</p>
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Total Contributions</p>
           <p className="text-3xl font-extrabold text-white">{fmt(totalMonthlyContribution)}</p>
-          <p className="text-xs text-slate-500 mt-2 font-medium">For {months[currentMonth]} {currentYear}</p>
         </div>
-
         <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
-          <p className="text-slate-400 font-semibold text-sm uppercase tracking-wider mb-2">Outstanding Loan Debt</p>
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Total Loan Debt</p>
           <p className="text-3xl font-extrabold text-white">{fmt(totalLoanDebt)}</p>
-          <p className="text-xs text-slate-500 mt-2 font-medium">Across {activeLoansList.length} active loans</p>
         </div>
-
         <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
-          <p className="text-slate-400 font-semibold text-sm uppercase tracking-wider mb-2">Unpaid Monthly Target</p>
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Unpaid Contributions</p>
           <p className="text-3xl font-extrabold text-white">{fmt(totalUnpaidAmount)}</p>
-          <p className="text-xs text-slate-500 mt-2 font-medium">{unpaidUsers.length} members below 350</p>
         </div>
       </div>
 
       {/* Pending Approvals */}
       <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
-        <div className="border-b border-slate-800 p-6 flex items-center justify-between bg-slate-900/50">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            Pending Approvals
-          </h2>
-          <span className="bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1 rounded-md border border-slate-700">
-            {pendingPayments.length} awaiting
-          </span>
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-white">Pending Approvals</h2>
+          <span className="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-md border border-slate-700">{pendingPayments.length} awaiting</span>
         </div>
-
         <div className="p-6">
           {pendingPayments.length === 0 ? (
-            <p className="text-slate-400 text-center py-6 font-medium">All caught up. No pending payments to approve.</p>
+            <p className="text-slate-400 text-center py-4">All caught up. No pending payments to approve.</p>
           ) : (
             <div className="space-y-4">
               {pendingPayments.map((p: any) => {
@@ -205,12 +195,10 @@ export default async function AdminDashboard({
         </div>
       </div>
 
-      {/* Detailed Reports Grid */}
+      {/* Reports Grid */}
       <div className="grid gap-6 md:grid-cols-2">
-        
-        {/* Unpaid Members List */}
         <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
-          <div className="border-b border-slate-800 p-5">
+          <div className="p-5 border-b border-slate-800">
             <h2 className="text-lg font-bold text-white">Monthly Contributions (&lt; 350)</h2>
           </div>
           <div className="p-5 space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
@@ -233,9 +221,8 @@ export default async function AdminDashboard({
           </div>
         </div>
 
-        {/* Active Loans List */}
         <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
-          <div className="border-b border-slate-800 p-5">
+          <div className="p-5 border-b border-slate-800">
             <h2 className="text-lg font-bold text-white">Active Loans Overview</h2>
           </div>
           <div className="p-5 space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
