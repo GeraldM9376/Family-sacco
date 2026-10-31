@@ -78,7 +78,8 @@ export default async function Dashboard() {
       {/* Personalized Header with Clear Details */}
       <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">
+          {/* Solid White, Highly Readable Greeting */}
+          <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
             {greeting}, <span className="text-indigo-400">{firstName}</span>
           </h1>
           
