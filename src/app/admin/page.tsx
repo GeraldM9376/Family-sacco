@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { fmt, fmtDate } from "@/lib/helpers";
 import { approvePayment, rejectPayment } from "./actions";
-import Link from "next/link";
 import { connection } from "next/server";
 
 export default async function AdminDashboard({
@@ -14,7 +13,6 @@ export default async function AdminDashboard({
   const resolvedParams = await searchParams;
   const now = new Date();
   
-  // Default to current month/year if not selected
   const currentMonth = resolvedParams.month ? parseInt(resolvedParams.month) : now.getMonth();
   const currentYear = resolvedParams.year ? parseInt(resolvedParams.year) : now.getFullYear();
 
@@ -34,7 +32,6 @@ export default async function AdminDashboard({
       payments: {
         where: {
           status: "approved",
-          type: "savings",
           paidOn: { gte: startOfMonth, lte: endOfMonth },
         },
       },
@@ -52,8 +49,13 @@ export default async function AdminDashboard({
   let totalLoanDebt = 0;
 
   users.forEach((user: any) => {
-    // Calculate Savings for this month
-    const monthlySavings = user.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    // Calculate Savings for this month by reading the breakdown JSON
+    let monthlySavings = 0;
+    user.payments.forEach((p: any) => {
+      const breakdown = JSON.parse(p.breakdown || "{}");
+      if (breakdown.savings) monthlySavings += breakdown.savings;
+    });
+
     totalMonthlyContribution += monthlySavings;
 
     if (monthlySavings < 350) {
@@ -123,41 +125,50 @@ export default async function AdminDashboard({
           <p className="text-gray-500 text-center py-4">No pending payments to approve.</p>
         ) : (
           <div className="space-y-4">
-            {pendingPayments.map((p: any) => (
-              <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-gray-200 p-5 bg-gray-50">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${
-                      p.type === 'savings' ? 'bg-indigo-100 text-indigo-700' : 'bg-red-100 text-red-700'
-                    }`}>{p.type}</span>
-                    <p className="font-bold text-gray-900">{fmt(p.amount)}</p>
+            {/* UPDATED MAPPING FOR THE NEW CART SYSTEM */}
+            {pendingPayments.map((p: any) => {
+              const breakdown = JSON.parse(p.breakdown || "{}");
+              return (
+                <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-gray-200 p-5 bg-gray-50">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <p className="font-bold text-gray-900">Total: {fmt(p.totalAmount)}</p>
+                      <span className="px-2 py-1 rounded-md text-xs font-bold bg-indigo-100 text-indigo-700 uppercase">
+                        {p.method === "admin" ? "Admin Pays" : "Self Pay"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-900">{p.user.fullName}</span> (ID: {p.user.idNumber})
+                    </p>
+                    <div className="text-xs text-gray-500 mt-2 flex gap-3">
+                      {breakdown.savings > 0 && <span>Savings: {fmt(breakdown.savings)}</span>}
+                      {breakdown.normal > 0 && <span>Normal: {fmt(breakdown.normal)}</span>}
+                      {breakdown.emergency > 0 && <span>Emergency: {fmt(breakdown.emergency)}</span>}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Paid on {fmtDate(p.paidOn)} by {p.payerName}</p>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">{p.user.fullName}</span> (ID: {p.user.idNumber})
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">Paid on {fmtDate(p.paidOn)} by {p.payerName}</p>
-                </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                  <form action={async () => {
-                    "use server";
-                    await approvePayment(p.id);
-                  }} className="flex-1 md:flex-none">
-                    <button className="w-full rounded-xl bg-emerald-500 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-600 transition">Approve</button>
-                  </form>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <form action={async () => {
+                      "use server";
+                      await approvePayment(p.id);
+                    }} className="flex-1 md:flex-none">
+                      <button className="w-full rounded-xl bg-emerald-500 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-600 transition">Approve</button>
+                    </form>
 
-                  <form action={async (formData) => {
-                    "use server";
-                    const reason = formData.get("reason") as string;
-                    await rejectPayment(p.id, reason);
-                  }} className="flex-1 md:flex-none flex gap-2">
-                    <input name="reason" placeholder="Reason..." required
-                      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
-                    <button className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-200 transition">Reject</button>
-                  </form>
+                    <form action={async (formData) => {
+                      "use server";
+                      const reason = formData.get("reason") as string;
+                      await rejectPayment(p.id, reason);
+                    }} className="flex-1 md:flex-none flex gap-2">
+                      <input name="reason" placeholder="Reason..." required
+                        className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
+                      <button className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-200 transition">Reject</button>
+                    </form>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
