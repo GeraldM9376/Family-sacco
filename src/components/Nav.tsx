@@ -1,39 +1,76 @@
 "use client";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
 export function Nav() {
   const { data } = useSession();
+  const pathname = usePathname();
+
   if (!data?.user) return null;
   const role = (data.user as any).role;
-  return (
-    <nav className="flex items-center gap-4 border-b bg-white px-6 py-3 shadow-sm">
-      <Link href={role === "admin" ? "/admin" : "/dashboard"} className="font-bold text-indigo-600">
-        Sacco
+
+  const navLink = (href: string, label: string) => {
+    const isActive = pathname === href;
+    return (
+      <Link 
+        href={href} 
+        className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+          isActive 
+            ? "bg-indigo-50 text-indigo-700" 
+            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        }`}
+      >
+        {label}
       </Link>
-      <div className="flex-1" />
-      {role === "admin" ? (
-        <>
-          <Link href="/admin" className="text-sm hover:text-indigo-600">Dashboard</Link>
-          <Link href="/admin/users" className="text-sm hover:text-indigo-600">Users</Link>
-          <Link href="/admin/loans/new" className="text-sm hover:text-indigo-600">New Loan</Link>
-          <Link href="/admin/payments/new" className="text-sm hover:text-indigo-600">Record Payment</Link>
-          <Link href="/admin/settings" className="text-sm hover:text-indigo-600">Settings</Link>
-        </>
-      ) : (
-        <>
-          <Link href="/dashboard" className="text-sm hover:text-indigo-600">Dashboard</Link>
-          <Link href="/dashboard/pay" className="text-sm hover:text-indigo-600">Pay</Link>
-          <Link href="/dashboard/loans" className="text-sm hover:text-indigo-600">My Loans</Link>
-          <Link href="/dashboard/transactions" className="text-sm hover:text-indigo-600">Transactions</Link>
-        </>
-      )}
-      <button
-       onClick={() => signOut({ callbackUrl: "/login", redirect: true })}
-       className="rounded-lg bg-red-500 px-3 py-1.5 text-sm text-white hover:bg-red-600"
-       >
-        Logout
-      </button>
+    );
+  };
+
+  return (
+    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between">
+        
+        {/* Logo */}
+        <Link href={role === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md">
+            <span className="font-bold text-lg">M</span>
+          </div>
+          <span className="text-xl font-extrabold tracking-tight text-gray-900">MAWEGA <span className="text-indigo-600">SACCO</span></span>
+        </Link>
+
+        {/* Links */}
+        <div className="hidden md:flex items-center gap-1">
+          {role === "admin" ? (
+            <>
+              {navLink("/admin", "Dashboard")}
+              {navLink("/admin/users", "Users")}
+              {navLink("/admin/loans/new", "New Loan")}
+              {navLink("/admin/payments/new", "Record Payment")}
+              {navLink("/admin/settings", "Settings")}
+            </>
+          ) : (
+            <>
+              {navLink("/dashboard", "Overview")}
+              {navLink("/dashboard/pay", "Make Payment")}
+              {navLink("/dashboard/loans", "My Loans")}
+            </>
+          )}
+        </div>
+
+        {/* User Info & Logout */}
+        <div className="flex items-center gap-4">
+          <div className="hidden text-right md:block">
+            <p className="text-sm font-bold text-gray-900">{data.user.name}</p>
+            <p className="text-xs text-gray-500 capitalize">{role}</p>
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login", redirect: true })}
+            className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-sm transition-all hover:bg-gray-800 hover:shadow"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
     </nav>
   );
 }

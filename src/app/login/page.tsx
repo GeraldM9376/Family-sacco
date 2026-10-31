@@ -27,9 +27,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[70vh] overflow-hidden rounded-3xl bg-white shadow-2xl">
-      {/* Left Side - Branding */}
-      <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-gray-900 via-indigo-900 to-gray-900 p-12 text-white md:flex relative">
+    <div className="flex min-h-[80vh] overflow-hidden rounded-3xl bg-white shadow-2xl mx-auto max-w-4xl mt-10">
+      <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 p-12 text-white md:flex relative">
         <div className="relative z-10 mt-10">
           <h2 className="text-4xl font-extrabold tracking-tight">Welcome Back.</h2>
           <p className="mt-4 text-lg text-indigo-200">
@@ -38,21 +37,20 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Side - The Form */}
       <div className="w-full p-8 md:w-1/2 lg:p-12 flex flex-col justify-center">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">Sign In</h1>
         <p className="mb-8 text-sm text-gray-500">Don't have an account? <Link href="/signup" className="font-semibold text-indigo-600 hover:underline">Create one</Link></p>
 
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">ID Number</label>
+            <label className="mb-1 block text-sm font-bold text-gray-700">ID Number</label>
             <input name="idNumber" placeholder="Enter your ID or insignadmin" required
               className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-indigo-500" />
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-bold text-gray-700">Password</label>
               <Link href="/forgot" className="text-xs font-semibold text-indigo-600 hover:underline">Forgot?</Link>
             </div>
             <div className="relative">
@@ -67,8 +65,10 @@ export default function LoginPage() {
           <Message text={err} type="error" />
 
           <button disabled={loading}
-            className="w-full transform rounded-xl bg-gradient-to-r from-gray-900 to-gray-700 py-3 font-semibold text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60">
-            {loading ? "Signing in…" : "Sign In"}
+            className="w-full transform rounded-xl bg-gray-900 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 flex justify-center items-center gap-2">
+            {loading ? (
+              <><span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> Signing in…</>
+            ) : "Sign In"}
           </button>
         </form>
       </div>
