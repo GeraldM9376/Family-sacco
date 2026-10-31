@@ -19,8 +19,14 @@ export async function submitBulkPayment(formData: FormData) {
     const normalAmt = Number(formData.get("normalAmt")) || 0;
     const emergencyAmt = Number(formData.get("emergencyAmt")) || 0;
 
+    // 1. Basic validation
     if (!method || !payerName || !paidOnStr || totalAmount <= 0) {
       throw new Error("Invalid payment details. Please check the form.");
+    }
+
+    // 2. Prevent negative numbers on the backend
+    if (savingsAmt < 0 || normalAmt < 0 || emergencyAmt < 0) {
+      throw new Error("Payment amounts cannot be negative.");
     }
 
     const paidOn = new Date(paidOnStr);
@@ -29,6 +35,7 @@ export async function submitBulkPayment(formData: FormData) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error("User not found.");
 
+    // 3. Prevent overpaying loans
     if (normalAmt > user.normalDebt) throw new Error("Cannot pay more than your normal loan debt.");
     if (emergencyAmt > user.emergencyDebt) throw new Error("Cannot pay more than your emergency loan debt.");
 

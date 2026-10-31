@@ -12,10 +12,23 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
+  // Helper to stop negative numbers and letters in the input
+  const handleAmountChange = (field: "savings" | "normal" | "emergency", value: string) => {
+    // If the user types a minus sign or letters, replace them with empty string
+    const cleanValue = value.replace(/[^0-9]/g, "");
+    setAmounts({ ...amounts, [field]: cleanValue });
+  };
+
   const calculateTotal = () => {
     const s = Number(amounts.savings) || 0;
     const n = Number(amounts.normal) || 0;
     const e = Number(amounts.emergency) || 0;
+    
+    // Strict check for negative numbers
+    if (s < 0 || n < 0 || e < 0) {
+      return setErr("Amounts cannot be negative.");
+    }
+
     const sum = s + n + e;
     
     if (sum <= 0) return setErr("Please enter at least one amount.");
@@ -67,8 +80,15 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
               <p className="font-bold text-indigo-900">Monthly Savings</p>
               <p className="text-xs text-indigo-600">Min: KES 350</p>
             </div>
-            <input type="number" min="0" placeholder="0" value={amounts.savings} onChange={(e) => setAmounts({...amounts, savings: e.target.value})}
-              className="w-32 rounded-lg border-2 border-indigo-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500" />
+            <input 
+              type="number" 
+              min="0" 
+              step="1"
+              placeholder="0" 
+              value={amounts.savings} 
+              onChange={(e) => handleAmountChange("savings", e.target.value)}
+              className="w-32 rounded-lg border-2 border-indigo-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500" 
+            />
           </div>
 
           <div className={`flex justify-between items-center bg-gray-50 p-4 rounded-xl ${user.normalDebt <= 0 ? 'opacity-50' : ''}`}>
@@ -76,8 +96,16 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
               <p className="font-bold text-gray-900">Normal Loan Repayment</p>
               <p className="text-xs text-red-500">Outstanding: KES {user.normalDebt}</p>
             </div>
-            <input type="number" min="0" disabled={user.normalDebt <= 0} placeholder="0" value={amounts.normal} onChange={(e) => setAmounts({...amounts, normal: e.target.value})}
-              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500 disabled:bg-gray-200" />
+            <input 
+              type="number" 
+              min="0" 
+              step="1"
+              disabled={user.normalDebt <= 0} 
+              placeholder="0" 
+              value={amounts.normal} 
+              onChange={(e) => handleAmountChange("normal", e.target.value)}
+              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500 disabled:bg-gray-200" 
+            />
           </div>
 
           <div className={`flex justify-between items-center bg-gray-50 p-4 rounded-xl ${user.emergencyDebt <= 0 ? 'opacity-50' : ''}`}>
@@ -85,8 +113,16 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
               <p className="font-bold text-gray-900">Emergency Loan Repayment</p>
               <p className="text-xs text-red-500">Outstanding: KES {user.emergencyDebt}</p>
             </div>
-            <input type="number" min="0" disabled={user.emergencyDebt <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => setAmounts({...amounts, emergency: e.target.value})}
-              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500 disabled:bg-gray-200" />
+            <input 
+              type="number" 
+              min="0" 
+              step="1"
+              disabled={user.emergencyDebt <= 0} 
+              placeholder="0" 
+              value={amounts.emergency} 
+              onChange={(e) => handleAmountChange("emergency", e.target.value)}
+              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500 disabled:bg-gray-200" 
+            />
           </div>
 
           {err && <p className="text-red-500 text-sm font-bold text-center">{err}</p>}
