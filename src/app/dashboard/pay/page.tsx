@@ -13,5 +13,9 @@ export default async function PayPage() {
 
   if (!user) return null;
 
-  return <PayClient user={user} setting={setting || {}} />;
+  return (
+    <div className="text-slate-200">
+      <PayClient user={user} setting={setting || {}} />
+    </div>
+  );
 }

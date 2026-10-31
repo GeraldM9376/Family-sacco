@@ -22,19 +22,19 @@ export default async function HistoryPage() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Payment History</h1>
-          <p className="text-gray-500 mt-1">A full record of all your contributions and loan repayments.</p>
+          <h1 className="text-3xl font-extrabold text-white">Payment History</h1>
+          <p className="text-slate-400 mt-1">A full record of all your contributions and loan repayments.</p>
         </div>
-        <Link href="/dashboard" className="rounded-xl bg-white px-6 py-2.5 font-semibold text-gray-700 shadow-sm border hover:bg-gray-50">
+        <Link href="/dashboard" className="rounded-xl bg-slate-800 px-6 py-2.5 font-semibold text-white shadow-sm border border-slate-700 hover:bg-slate-700">
           Back to Dashboard
         </Link>
       </div>
 
-      <div className="rounded-3xl bg-white shadow-lg border border-gray-100 overflow-hidden">
+      <div className="rounded-3xl bg-slate-800 shadow-lg border border-slate-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-600">
+              <tr className="bg-slate-900 border-b border-slate-700 text-sm font-semibold text-slate-300">
                 <th className="p-4">Date Paid</th>
                 <th className="p-4">Payment Type</th>
                 <th className="p-4">Amount</th>
@@ -42,10 +42,10 @@ export default async function HistoryPage() {
                 <th className="p-4">Reason (If Rejected)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-700">
               {user.payments.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
+                  <td colSpan={5} className="p-8 text-center text-slate-400">
                     You have not made any payments yet.
                   </td>
                 </tr>
@@ -55,30 +55,30 @@ export default async function HistoryPage() {
                   try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
 
                   return (
-                    <tr key={p.id} className="hover:bg-gray-50 transition">
-                      <td className="p-4 text-gray-600">
+                    <tr key={p.id} className="hover:bg-slate-700/50 transition">
+                      <td className="p-4 text-slate-300">
                         {fmtDate(p.paidOn)}
                       </td>
                       <td className="p-4">
                         <div className="flex flex-col gap-1">
-                          {breakdown.savings > 0 && <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded w-fit">Savings: {fmt(breakdown.savings)}</span>}
-                          {breakdown.normal > 0 && <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded w-fit">Normal Loan: {fmt(breakdown.normal)}</span>}
-                          {breakdown.emergency > 0 && <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded w-fit">Emergency Loan: {fmt(breakdown.emergency)}</span>}
+                          {breakdown.savings > 0 && <span className="text-xs font-bold text-indigo-400 bg-indigo-500/20 px-2 py-1 rounded w-fit">Savings: {fmt(breakdown.savings)}</span>}
+                          {breakdown.normal > 0 && <span className="text-xs font-bold text-red-400 bg-red-500/20 px-2 py-1 rounded w-fit">Normal Loan: {fmt(breakdown.normal)}</span>}
+                          {breakdown.emergency > 0 && <span className="text-xs font-bold text-orange-400 bg-orange-500/20 px-2 py-1 rounded w-fit">Emergency Loan: {fmt(breakdown.emergency)}</span>}
                         </div>
                       </td>
-                      <td className="p-4 font-bold text-gray-900">
+                      <td className="p-4 font-bold text-white">
                         {fmt(p.totalAmount)}
                       </td>
                       <td className="p-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
-                          p.status === "approved" ? "bg-emerald-100 text-emerald-700" :
-                          p.status === "pending" ? "bg-amber-100 text-amber-700" :
-                          "bg-red-100 text-red-700"
+                          p.status === "approved" ? "bg-emerald-500/20 text-emerald-400" :
+                          p.status === "pending" ? "bg-amber-500/20 text-amber-400" :
+                          "bg-red-500/20 text-red-400"
                         }`}>
                           {p.status}
                         </span>
                       </td>
-                      <td className="p-4 text-sm text-red-600 max-w-[200px]">
+                      <td className="p-4 text-sm text-red-400 max-w-[200px]">
                         {p.status === "rejected" && p.rejectReason ? p.rejectReason : "-"}
                       </td>
                     </tr>
