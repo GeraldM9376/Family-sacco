@@ -8,11 +8,11 @@ export function SubmitButton({ children, className, ...props }: React.ButtonHTML
     <button
       {...props}
       disabled={pending || props.disabled}
-      className={`${className} disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2`}
+      className={`${className} disabled:opacity-60 disabled:cursor-not-allowed flex justify-center items-center gap-2`}
     >
       {pending ? (
         <>
-          <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+          <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
           Processing...
         </>
       ) : (

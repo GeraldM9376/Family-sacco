@@ -2,37 +2,26 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Message } from "@/components/Message";
+import { SubmitButton } from "@/components/SubmitButton";
 import Link from "next/link";
 
 export default function SignupPage() {
   const router = useRouter();
   const [msg, setMsg] = useState<{ text: string; type: "error" | "success" } | null>(null);
-  const [loading, setLoading] = useState(false);
-  
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    idNumber: "",
-    phone: "",
-    password: "",
-    confirm: "",
-  });
+  const [form, setForm] = useState({ fullName: "", email: "", idNumber: "", phone: "", password: "", confirm: "" });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value;
     const name = e.target.name;
-    
     if (name === "fullName") val = val.toUpperCase();
     if (name === "email") val = val.toLowerCase();
     if (name === "phone") {
       val = val.replace(/\s+/g, "");
       if (val.startsWith("07") || val.startsWith("01")) val = "+254" + val.substring(1);
     }
-    if (name === "idNumber") val = val.replace(/\D/g, ""); // Numbers only
-    
+    if (name === "idNumber") val = val.replace(/\D/g, ""); 
     setForm({ ...form, [name]: val });
   };
 
@@ -59,20 +48,14 @@ export default function SignupPage() {
     if (!isValidName || !isValidEmail || !isValidId || !isValidPhone || !isValidPass || !doPasswordsMatch) {
       return setMsg({ text: "Please fix the errors above before submitting.", type: "error" });
     }
-
     setMsg(null);
-    setLoading(true);
-
     const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
     const data = await res.json();
-    setLoading(false);
-
     if (!res.ok) return setMsg({ text: data.error, type: "error" });
-    
     setMsg({ text: "Account created! Password sent to your email. Redirecting...", type: "success" });
     setTimeout(() => router.push("/login"), 2500);
   }
@@ -87,12 +70,9 @@ export default function SignupPage() {
       <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-indigo-700 via-purple-600 to-pink-500 p-12 text-white md:flex relative">
         <div className="relative z-10">
           <h2 className="text-4xl font-extrabold tracking-tight">Join MAWEGA SACCO.</h2>
-          <p className="mt-4 text-lg text-indigo-100">
-            Secure your future with Kenya's most transparent savings and loan platform.
-          </p>
+          <p className="mt-4 text-lg text-indigo-100">Secure your future with Kenya's most transparent savings and loan platform.</p>
         </div>
       </div>
-
       <div className="w-full p-8 md:w-1/2 lg:p-12 relative overflow-y-auto">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">Create Account</h1>
         <p className="mb-8 text-sm text-gray-500">Already have an account? <Link href="/login" className="font-semibold text-indigo-600 hover:underline">Log in</Link></p>
@@ -106,7 +86,6 @@ export default function SignupPage() {
               <InputStatus isValid={isValidName} value={form.fullName} />
             </div>
           </div>
-
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Email Address</label>
             <div className="relative">
@@ -115,7 +94,6 @@ export default function SignupPage() {
               <InputStatus isValid={isValidEmail} value={form.email} />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">ID Number</label>
@@ -131,7 +109,6 @@ export default function SignupPage() {
               </div>
             </div>
           </div>
-
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
             <div className="relative">
@@ -149,7 +126,6 @@ export default function SignupPage() {
               </div>
             )}
           </div>
-
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Confirm Password</label>
             <div className="relative">
@@ -160,15 +136,10 @@ export default function SignupPage() {
               </button>
             </div>
           </div>
-
           <Message text={msg?.text} type={msg?.type} />
-
-          <button disabled={loading}
-            className="w-full transform rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 font-semibold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-indigo-500/30 active:scale-95 disabled:opacity-60 flex justify-center items-center gap-2">
-            {loading ? (
-              <><span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> Creating Account…</>
-            ) : "Create Account"}
-          </button>
+          <SubmitButton className="w-full transform rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 font-semibold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-indigo-500/30 active:scale-95">
+            Create Account
+          </SubmitButton>
         </form>
       </div>
     </div>
