@@ -13,7 +13,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { idNumber, type, payerName, paidOn } = body;
     
-    // Convert string input to actual number
     const amount = Number(body.amount);
 
     if (!idNumber || !type || isNaN(amount) || amount <= 0) {
@@ -49,14 +48,44 @@ export async function POST(req: Request) {
       } else if (type === "normal") {
         const newDebt = Math.max(0, user.normalDebt - amount);
         await tx.user.update({ where: { id: user.id }, data: { normalDebt: newDebt } });
+        await distributeLoanPayment(tx, user.id, "normal", amount); // Added
       } else if (type === "emergency") {
         const newDebt = Math.max(0, user.emergencyDebt - amount);
         await tx.user.update({ where: { id: user.id }, data: { emergencyDebt: newDebt } });
+        await distributeLoanPayment(tx, user.id, "emergency", amount); // Added
       }
     });
 
     return NextResponse.json({ ok: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to record payment." }, { status: 500 });
+  }
+}
+
+// Helper to update the specific loan records
+async function distributeLoanPayment(tx: any, userId: string, type: string, amountPaid: number) {
+  let remaining = amountPaid;
+  const activeLoans = await tx.loan.findMany({
+    where: { userId, type, status: "unpaid" },
+    orderBy: { dueDate: "asc" },
+  });
+
+  for (const loan of activeLoans) {
+    if (remaining <= 0) break;
+    const loanRemaining = loan.amountToPay - loan.paidAmount;
+    const paymentForThisLoan = Math.min(loanRemaining, remaining);
+    
+    const newPaidAmount = loan.paidAmount + paymentForThisLoan;
+    const isFullyPaid = newPaidAmount >= loan.amountToPay;
+
+    await tx.loan.update({
+      where: { id: loan.id },
+      data: {
+        paidAmount: newPaidAmount,
+        status: isFullyPaid ? "paid" : "unpaid",
+      },
+    });
+
+    remaining -= paymentForThisLoan;
   }
 }
