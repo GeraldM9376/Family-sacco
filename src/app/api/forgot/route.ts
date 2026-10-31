@@ -16,7 +16,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No account with that email." }, { status: 404 });
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  // Changed to 5 minutes
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); 
 
   await prisma.otp.upsert({
     where: { userId: user.id },

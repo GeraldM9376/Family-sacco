@@ -18,12 +18,11 @@ export async function submitPayment(formData: FormData) {
     throw new Error("Invalid payment details.");
   }
 
-  // Double check: Prevent loan payment if no debt (Security check)
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error("User not found");
 
-  if (type === "normal" && user.normalDebt <= 0) throw new Error("You have no normal loan debt.");
-  if (type === "emergency" && user.emergencyDebt <= 0) throw new Error("You have no emergency loan debt.");
+  if (type === "normal" && amount > user.normalDebt) throw new Error("Cannot pay more than your normal loan debt.");
+  if (type === "emergency" && amount > user.emergencyDebt) throw new Error("Cannot pay more than your emergency loan debt.");
 
   await prisma.payment.create({
     data: {

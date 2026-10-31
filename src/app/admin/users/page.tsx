@@ -1,14 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { fmt } from "@/lib/helpers";
 import Link from "next/link";
-import { connection } from "next/server"; // Added
+import { connection } from "next/server";
 
 export default async function AdminUsersPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  await connection(); // Added
+  await connection();
 
   const resolvedParams = await searchParams;
   const q = resolvedParams.q || "";
@@ -34,18 +34,23 @@ export default async function AdminUsersPage({
           <p className="text-gray-500">Search and view all registered members.</p>
         </div>
         
-        <form className="flex w-full md:w-96 gap-2">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q}
-            placeholder="Search by Name, ID or Phone..."
-            className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 outline-none focus:border-indigo-500"
-          />
-          <button className="rounded-xl bg-indigo-600 px-6 font-bold text-white hover:bg-indigo-700 transition">
-            Search
-          </button>
-        </form>
+        <div className="flex gap-2">
+          <Link href="/admin/users/delete" className="rounded-xl bg-red-100 px-4 py-2.5 font-bold text-red-700 hover:bg-red-200 transition">
+            Delete User
+          </Link>
+          <form className="flex w-full md:w-96 gap-2">
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder="Search by Name, ID or Phone..."
+              className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 outline-none focus:border-indigo-500"
+            />
+            <button className="rounded-xl bg-indigo-600 px-6 font-bold text-white hover:bg-indigo-700 transition">
+              Search
+            </button>
+          </form>
+        </div>
       </div>
 
       <div className="rounded-3xl bg-white shadow-lg border border-gray-100 overflow-hidden">

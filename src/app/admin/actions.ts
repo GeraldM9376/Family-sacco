@@ -13,20 +13,17 @@ export async function approvePayment(paymentId: string) {
   const { userId, type, amount } = payment;
 
   await prisma.$transaction(async (tx: any) => {
-    // 1. Update the Payment Status
     await tx.payment.update({
       where: { id: paymentId },
       data: { status: "approved" },
     });
 
-    // 2. Update User Totals
     if (type === "savings") {
       await tx.user.update({
         where: { id: userId },
         data: { savingsTotal: { increment: amount } },
       });
     } else if (type === "normal") {
-      // Prevent debt from going below 0
       const newDebt = Math.max(0, payment.user.normalDebt - amount);
       await tx.user.update({
         where: { id: userId },
@@ -48,12 +45,11 @@ export async function approvePayment(paymentId: string) {
   revalidatePath("/dashboard");
 }
 
-// Helper to distribute payment across active loans
 async function distributeLoanPayment(tx: any, userId: string, type: string, amountPaid: number) {
   let remaining = amountPaid;
   const activeLoans = await tx.loan.findMany({
     where: { userId, type, status: "unpaid" },
-    orderBy: { dueDate: "asc" }, // Pay oldest loans first
+    orderBy: { dueDate: "asc" },
   });
 
   for (const loan of activeLoans) {
@@ -89,10 +85,9 @@ export async function rejectPayment(paymentId: string, reason: string) {
   revalidatePath("/dashboard");
 }
 
-// ---------- ADMIN: ISSUE LOAN ----------
 export async function createLoan(formData: FormData) {
   const idNumber = formData.get("idNumber") as string;
-  const type = formData.get("type") as string; // normal or emergency
+  const type = formData.get("type") as string; 
   const principal = Number(formData.get("principal"));
   const amountToPay = Number(formData.get("amountToPay"));
   const issuedOn = new Date(formData.get("issuedOn") as string);
@@ -103,10 +98,9 @@ export async function createLoan(formData: FormData) {
   }
 
   const user = await prisma.user.findUnique({ where: { idNumber } });
-  if (!user) throw new Error("User not found");
+  if (!user) throw new Error("User with that ID does not exist.");
 
   await prisma.$transaction(async (tx: any) => {
-    // 1. Create the loan record
     await tx.loan.create({
       data: {
         userId: user.id,
@@ -118,7 +112,6 @@ export async function createLoan(formData: FormData) {
       },
     });
 
-    // 2. Add to the user's total debt
     if (type === "normal") {
       await tx.user.update({
         where: { id: user.id },
@@ -137,7 +130,6 @@ export async function createLoan(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-// ---------- ADMIN: RECORD PAYMENT FOR USER ----------
 export async function adminRecordPayment(formData: FormData) {
   const idNumber = formData.get("idNumber") as string;
   const type = formData.get("type") as string;
@@ -150,10 +142,12 @@ export async function adminRecordPayment(formData: FormData) {
   }
 
   const user = await prisma.user.findUnique({ where: { idNumber } });
-  if (!user) throw new Error("User not found");
+  if (!user) throw new Error("User with that ID does not exist.");
+
+  if (type === "normal" && amount > user.normalDebt) throw new Error("Cannot pay more than the normal loan debt.");
+  if (type === "emergency" && amount > user.emergencyDebt) throw new Error("Cannot pay more than the emergency loan debt.");
 
   await prisma.$transaction(async (tx: any) => {
-    // 1. Create the payment as APPROVED immediately
     await tx.payment.create({
       data: {
         userId: user.id,
@@ -166,7 +160,6 @@ export async function adminRecordPayment(formData: FormData) {
       },
     });
 
-    // 2. Update the user's totals
     if (type === "savings") {
       await tx.user.update({
         where: { id: user.id },
@@ -194,7 +187,6 @@ export async function adminRecordPayment(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-// ---------- ADMIN: SAVE SETTINGS ----------
 export async function saveSettings(formData: FormData) {
   const paybill = formData.get("paybill") as string;
   const accountNo = formData.get("accountNo") as string;
@@ -209,4 +201,25 @@ export async function saveSettings(formData: FormData) {
 
   revalidatePath("/admin/settings");
   revalidatePath("/dashboard/pay");
+}
+
+export async function deleteUser(formData: FormData) {
+  const idNumber = formData.get("idNumber") as string;
+  const phone = formData.get("phone") as string;
+  const confirmation = formData.get("confirmation") as string;
+
+  if (confirmation !== "DELETE") {
+    throw new Error("You must type DELETE to confirm.");
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { idNumber, phone }
+  });
+
+  if (!user) {
+    throw new Error("User ID and Phone number do not match our records.");
+  }
+
+  await prisma.user.delete({ where: { id: user.id } });
+  revalidatePath("/admin/users");
 }
