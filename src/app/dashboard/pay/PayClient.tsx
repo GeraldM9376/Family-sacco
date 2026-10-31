@@ -59,111 +59,111 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-extrabold text-gray-900">Make a Payment</h1>
-        <p className="text-gray-500 mt-1">Select what you are paying for and calculate your total.</p>
+        <h1 className="text-3xl font-extrabold text-white">Make a Payment</h1>
+        <p className="text-slate-400 mt-1">Select what you are paying for and calculate your total.</p>
       </div>
 
       {!showOptions && (
-        <div className="rounded-3xl bg-white p-8 shadow-lg border border-gray-100 space-y-4">
-          <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl">
+        <div className="rounded-3xl bg-slate-800 p-8 shadow-lg border border-slate-700 space-y-4">
+          <div className="flex justify-between items-center bg-indigo-500/10 p-4 rounded-xl border border-indigo-500/20">
             <div>
-              <p className="font-bold text-indigo-900">Monthly Savings</p>
-              <p className="text-xs text-indigo-600">Min: KES 350</p>
+              <p className="font-bold text-indigo-300">Monthly Savings</p>
+              <p className="text-xs text-indigo-400">Min: KES 350</p>
             </div>
             <input type="number" min="0" step="1" placeholder="0" value={amounts.savings} onChange={(e) => handleAmountChange("savings", e.target.value)}
-              className="w-32 rounded-lg border-2 border-indigo-200 px-3 py-2 text-black font-semibold text-right outline-none focus:border-indigo-500" />
+              className="w-32 rounded-lg border-2 border-indigo-500/30 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-400" />
           </div>
 
-          <div className={`flex justify-between items-center bg-gray-50 p-4 rounded-xl ${user.normalDebt <= 0 ? 'opacity-50' : ''}`}>
+          <div className={`flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700 ${user.normalDebt <= 0 ? 'opacity-50' : ''}`}>
             <div>
-              <p className="font-bold text-gray-900">Normal Loan Repayment</p>
-              <p className="text-xs text-red-500">Outstanding: KES {user.normalDebt}</p>
+              <p className="font-bold text-white">Normal Loan Repayment</p>
+              <p className="text-xs text-red-400">Outstanding: KES {user.normalDebt}</p>
             </div>
             <input type="number" min="0" step="1" disabled={user.normalDebt <= 0} placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
-              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-black font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-gray-200" />
+              className="w-32 rounded-lg border-2 border-slate-700 bg-slate-800 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800/50" />
           </div>
 
-          <div className={`flex justify-between items-center bg-gray-50 p-4 rounded-xl ${user.emergencyDebt <= 0 ? 'opacity-50' : ''}`}>
+          <div className={`flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700 ${user.emergencyDebt <= 0 ? 'opacity-50' : ''}`}>
             <div>
-              <p className="font-bold text-gray-900">Emergency Loan Repayment</p>
-              <p className="text-xs text-red-500">Outstanding: KES {user.emergencyDebt}</p>
+              <p className="font-bold text-white">Emergency Loan Repayment</p>
+              <p className="text-xs text-red-400">Outstanding: KES {user.emergencyDebt}</p>
             </div>
             <input type="number" min="0" step="1" disabled={user.emergencyDebt <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
-              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-black font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-gray-200" />
+              className="w-32 rounded-lg border-2 border-slate-700 bg-slate-800 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800/50" />
           </div>
 
-          {err && <p className="text-red-500 text-sm font-bold text-center">{err}</p>}
+          {err && <p className="text-red-400 text-sm font-bold text-center bg-red-500/10 p-2 rounded border border-red-500/20">{err}</p>}
 
-          <button onClick={calculateTotal} className="w-full rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-gray-800 transition">
+          <button onClick={calculateTotal} className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-500 transition">
             Calculate Total
           </button>
         </div>
       )}
 
       {showOptions && (
-        <div className="rounded-3xl bg-white p-8 shadow-lg border border-gray-100">
-          <div className="mb-6 rounded-xl bg-emerald-50 p-6 text-center border border-emerald-100">
-            <p className="text-emerald-700 font-medium">Total Amount to Pay</p>
-            <p className="text-4xl font-extrabold text-emerald-900 mt-1">KES {total}</p>
-            <button onClick={() => setShowOptions(false)} className="mt-2 text-xs text-emerald-600 font-bold underline">Edit amounts</button>
+        <div className="rounded-3xl bg-slate-800 p-8 shadow-lg border border-slate-700">
+          <div className="mb-6 rounded-xl bg-emerald-500/10 p-6 text-center border border-emerald-500/20">
+            <p className="text-emerald-400 font-medium">Total Amount to Pay</p>
+            <p className="text-4xl font-extrabold text-emerald-300 mt-1">KES {total}</p>
+            <button onClick={() => setShowOptions(false)} className="mt-2 text-xs text-emerald-400 font-bold underline">Edit amounts</button>
           </div>
 
-          <h3 className="font-bold text-gray-900 mb-4">How would you like to pay?</h3>
+          <h3 className="font-bold text-white mb-4">How would you like to pay?</h3>
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <button onClick={() => setMethod("self")} className={`rounded-xl border-2 p-4 text-center transition ${method === "self" ? "border-indigo-600 bg-indigo-50" : "border-gray-200 hover:border-indigo-300"}`}>
+            <button onClick={() => setMethod("self")} className={`rounded-xl border-2 p-4 text-center transition ${method === "self" ? "border-indigo-500 bg-indigo-500/20" : "border-slate-700 hover:border-indigo-500/50"}`}>
               <span className="block text-2xl mb-1">📱</span>
-              <span className="font-bold text-gray-900 text-sm">Pay by Myself</span>
-              <span className="block text-xs text-gray-500 mt-1">Via Bank/Paybill</span>
+              <span className="font-bold text-white text-sm">Pay by Myself</span>
+              <span className="block text-xs text-slate-400 mt-1">Via Bank/Paybill</span>
             </button>
-            <button onClick={() => setMethod("admin")} className={`rounded-xl border-2 p-4 text-center transition ${method === "admin" ? "border-indigo-600 bg-indigo-50" : "border-gray-200 hover:border-indigo-300"}`}>
+            <button onClick={() => setMethod("admin")} className={`rounded-xl border-2 p-4 text-center transition ${method === "admin" ? "border-indigo-500 bg-indigo-500/20" : "border-slate-700 hover:border-indigo-500/50"}`}>
               <span className="block text-2xl mb-1">👨‍💼</span>
-              <span className="font-bold text-gray-900 text-sm">Admin Pays for Me</span>
-              <span className="block text-xs text-gray-500 mt-1">Send to Admin</span>
+              <span className="font-bold text-white text-sm">Admin Pays for Me</span>
+              <span className="block text-xs text-slate-400 mt-1">Send to Admin</span>
             </button>
           </div>
 
           {method && (
-            <form onSubmit={handleSubmit} className="space-y-4 border-t border-gray-200 pt-6">
-              <div className="bg-indigo-50 p-4 rounded-xl mb-4 text-sm">
+            <form onSubmit={handleSubmit} className="space-y-4 border-t border-slate-700 pt-6">
+              <div className="bg-indigo-500/10 p-4 rounded-xl mb-4 text-sm border border-indigo-500/20">
                 {method === "self" ? (
                   <>
-                    <p className="font-bold text-indigo-900 mb-2">Bank/Paybill Details</p>
-                    <p><strong>Paybill:</strong> {setting?.paybill || "Not set"}</p>
-                    <p><strong>Account:</strong> {setting?.accountNo || "Not set"}</p>
+                    <p className="font-bold text-indigo-300 mb-2">Bank/Paybill Details</p>
+                    <p className="text-white"><strong>Paybill:</strong> {setting?.paybill || "Not set"}</p>
+                    <p className="text-white"><strong>Account:</strong> {setting?.accountNo || "Not set"}</p>
                   </>
                 ) : (
                   <>
-                    <p className="font-bold text-indigo-900 mb-2">Send Money To Admin</p>
-                    <p><strong>Phone:</strong> {setting?.sendMoneyTo || "Not set"}</p>
-                    <p><strong>Name:</strong> {setting?.adminName || "Not set"}</p>
+                    <p className="font-bold text-indigo-300 mb-2">Send Money To Admin</p>
+                    <p className="text-white"><strong>Phone:</strong> {setting?.sendMoneyTo || "Not set"}</p>
+                    <p className="text-white"><strong>Name:</strong> {setting?.adminName || "Not set"}</p>
                   </>
                 )}
-                <p className="text-xs text-indigo-600 mt-2">After sending, fill the form below to submit for approval.</p>
+                <p className="text-xs text-indigo-400 mt-2">After sending, fill the form below to submit for approval.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Name on Payment</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-1">Name on Payment</label>
                   <input name="payerName" required defaultValue={user.fullName} readOnly
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 text-black font-semibold outline-none uppercase" />
+                    className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-slate-400 font-semibold outline-none uppercase" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Date Paid</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-1">Date Paid</label>
                   <input name="paidOn" type="date" required
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-indigo-500" />
+                    className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white font-semibold outline-none focus:border-indigo-500" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Your ID Number</label>
+                <label className="block text-sm font-bold text-slate-300 mb-1">Your ID Number</label>
                 <input required defaultValue={user.idNumber} readOnly
-                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 text-black font-semibold outline-none" />
+                  className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-slate-400 font-semibold outline-none" />
               </div>
 
-              {err && <p className="text-red-500 text-sm font-bold">{err}</p>}
+              {err && <p className="text-red-400 text-sm font-bold bg-red-500/10 p-3 rounded border border-red-500/20">{err}</p>}
 
               <button type="submit" disabled={loading}
-                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 font-bold text-white shadow-lg transition hover:scale-[1.02] disabled:opacity-50 flex justify-center items-center gap-2">
+                className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white shadow-lg transition hover:bg-emerald-500 disabled:opacity-50 flex justify-center items-center gap-2">
                 {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : "Submit for Admin Approval"}
               </button>
             </form>
