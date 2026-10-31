@@ -4,10 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { Bar } from "@/components/Bar";
 import { fmt, savingsPct, loanBarColor, loanPct, fmtDate } from "@/lib/helpers";
 import Link from "next/link";
-import { connection } from "next/server"; // 1. Import this
+import { connection } from "next/server";
 
 export default async function Dashboard() {
-  // 2. Tell Next.js to wait for a real request
   await connection();
 
   const s = await getServerSession(authOptions);
@@ -18,7 +17,31 @@ export default async function Dashboard() {
       loans: { where: { status: "unpaid" }, orderBy: { dueDate: "asc" } },
     },
   });
+
   if (!user) return <p>Loading…</p>;
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  // Fetch this month's approved payments
+  const monthlyPayments = await prisma.payment.findMany({
+    where: {
+      userId: user.id,
+      status: "approved",
+      paidOn: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+
+  // Calculate monthly breakdown
+  let monthSavings = 0;
+  let monthLoansPaid = 0;
+  monthlyPayments.forEach((p: any) => {
+    const b = JSON.parse(p.breakdown || "{}");
+    if (b.savings) monthSavings += b.savings;
+    if (b.normal) monthLoansPaid += b.normal;
+    if (b.emergency) monthLoansPaid += b.emergency;
+  });
 
   const normalLoans = user.loans.filter((l: any) => l.type === "normal");
   const emergencyLoans = user.loans.filter((l: any) => l.type === "emergency");
@@ -29,6 +52,9 @@ export default async function Dashboard() {
   const normalOriginal = normalLoans.reduce((a: number, l: any) => a + l.amountToPay, 0);
   const emergencyOriginal = emergencyLoans.reduce((a: number, l: any) => a + l.amountToPay, 0);
 
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const currentMonthName = months[now.getMonth()];
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -37,20 +63,39 @@ export default async function Dashboard() {
           <h1 className="text-3xl font-extrabold text-gray-900">
             Welcome back, {user.fullName.split(" ")[0]}
           </h1>
-          <p className="text-gray-500">Here is your current financial overview.</p>
+          <p className="text-gray-500">Here is your financial overview for {currentMonthName}.</p>
         </div>
         <Link href="/dashboard/pay" className="rounded-xl bg-indigo-600 px-6 py-2.5 text-center font-semibold text-white shadow-md hover:bg-indigo-700 transition">
           Make a Payment
         </Link>
       </div>
 
-      {/* Cards Grid */}
+      {/* Monthly Professional Details */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 flex flex-col justify-center">
+          <p className="text-sm font-medium text-gray-500">Saved this month ({currentMonthName})</p>
+          <p className="text-3xl font-bold text-emerald-600 mt-1">{fmt(monthSavings)}</p>
+          <p className="text-xs text-gray-400 mt-2">Target: KES 350</p>
+        </div>
+        <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 flex flex-col justify-center">
+          <p className="text-sm font-medium text-gray-500">Loans Paid this month</p>
+          <p className="text-3xl font-bold text-indigo-600 mt-1">{fmt(monthLoansPaid)}</p>
+          <p className="text-xs text-gray-400 mt-2">Total repayments made</p>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-white shadow-lg flex flex-col justify-center">
+          <p className="text-sm font-medium text-gray-300">Total Active Loans</p>
+          <p className="text-3xl font-bold mt-1">{fmt(normalTotal + emergencyTotal)}</p>
+          <p className="text-xs text-gray-400 mt-2">{user.loans.length} active loan(s)</p>
+        </div>
+      </div>
+
+      {/* Progress Cards Grid */}
       <div className="grid gap-6 md:grid-cols-3">
         
         {/* Savings Card */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 p-6 text-white shadow-xl">
           <div className="absolute -right-4 -top-4 text-8xl opacity-10">💰</div>
-          <p className="text-sm font-medium opacity-90">Total Savings</p>
+          <p className="text-sm font-medium opacity-90">Total Savings Balance</p>
           <p className="mt-2 text-4xl font-extrabold">{fmt(user.savingsTotal)}</p>
           <div className="mt-6">
             <div className="flex justify-between text-xs mb-1 opacity-90">
@@ -116,15 +161,22 @@ export default async function Dashboard() {
             <p className="text-sm text-gray-500">No payments waiting for approval.</p>
           ) : (
             <div className="space-y-3">
-              {user.payments.map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between rounded-xl bg-amber-50 p-4 border border-amber-100">
-                  <div>
-                    <p className="text-sm font-bold text-amber-900 capitalize">{p.type} Payment</p>
-                    <p className="text-xs text-amber-700">{fmt(p.amount)} — awaiting admin</p>
+              {user.payments.map((p: any) => {
+                const b = JSON.parse(p.breakdown || "{}");
+                return (
+                  <div key={p.id} className="flex items-center justify-between rounded-xl bg-amber-50 p-4 border border-amber-100">
+                    <div>
+                      <p className="text-sm font-bold text-amber-900">Total: {fmt(p.totalAmount)}</p>
+                      <p className="text-xs text-amber-700">
+                        {b.savings > 0 && `Savings: ${fmt(b.savings)} `}
+                        {b.normal > 0 && `| Normal: ${fmt(b.normal)} `}
+                        {b.emergency > 0 && `| Emergency: ${fmt(b.emergency)}`}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-amber-200 px-2 py-1 text-xs font-bold text-amber-800">Pending</span>
                   </div>
-                  <span className="rounded-full bg-amber-200 px-2 py-1 text-xs font-bold text-amber-800">Pending</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -142,7 +194,7 @@ export default async function Dashboard() {
                     <p className="text-sm font-bold text-gray-900 capitalize">{l.type} Loan</p>
                     <p className="text-xs text-gray-500">Due: {fmtDate(l.dueDate)}</p>
                   </div>
-                  <span className="font-semibold text-gray-800">{fmt(l.amountToPay - l.paidAmount)}</span>
+                  <span className="font-semibold text-red-600">{fmt(l.amountToPay - l.paidAmount)}</span>
                 </div>
               ))}
             </div>

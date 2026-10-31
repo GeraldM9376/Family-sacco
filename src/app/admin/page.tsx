@@ -19,14 +19,12 @@ export default async function AdminDashboard({
   const startOfMonth = new Date(currentYear, currentMonth, 1);
   const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
 
-  // 1. Fetch Pending Payments
   const pendingPayments = await prisma.payment.findMany({
     where: { status: "pending" },
     include: { user: true },
     orderBy: { createdAt: "asc" },
   });
 
-  // 2. Fetch ALL Users to calculate monthly stats
   const users = await prisma.user.findMany({
     include: {
       payments: {
@@ -41,7 +39,6 @@ export default async function AdminDashboard({
     },
   });
 
-  // 3. Calculate Statistics
   let totalMonthlyContribution = 0;
   let unpaidUsers: any[] = [];
   let totalUnpaidAmount = 0;
@@ -49,7 +46,6 @@ export default async function AdminDashboard({
   let totalLoanDebt = 0;
 
   users.forEach((user: any) => {
-    // Calculate Savings for this month by reading the breakdown JSON
     let monthlySavings = 0;
     user.payments.forEach((p: any) => {
       const breakdown = JSON.parse(p.breakdown || "{}");
@@ -69,7 +65,6 @@ export default async function AdminDashboard({
       totalUnpaidAmount += (350 - monthlySavings);
     }
 
-    // Calculate Active Loans
     user.loans.forEach((loan: any) => {
       const remaining = loan.amountToPay - loan.paidAmount;
       activeLoansList.push({
@@ -96,7 +91,6 @@ export default async function AdminDashboard({
           <p className="text-gray-500">Manage approvals and view monthly Sacco reports.</p>
         </div>
         
-        {/* Month & Year Selector */}
         <form className="flex gap-2 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
           <select name="month" defaultValue={currentMonth} className="rounded-lg border-0 bg-transparent py-2 pl-3 pr-8 text-sm font-semibold text-gray-700 focus:ring-0">
             {months.map((m, i) => (
@@ -114,7 +108,6 @@ export default async function AdminDashboard({
         </form>
       </div>
 
-      {/* PENDING APPROVALS SECTION */}
       <div className="rounded-3xl bg-white p-6 shadow-lg border border-gray-100">
         <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
           Pending Approvals
@@ -125,7 +118,6 @@ export default async function AdminDashboard({
           <p className="text-gray-500 text-center py-4">No pending payments to approve.</p>
         ) : (
           <div className="space-y-4">
-            {/* UPDATED MAPPING FOR THE NEW CART SYSTEM */}
             {pendingPayments.map((p: any) => {
               const breakdown = JSON.parse(p.breakdown || "{}");
               return (
@@ -173,10 +165,7 @@ export default async function AdminDashboard({
         )}
       </div>
 
-      {/* MONTHLY REPORT SECTION */}
       <div className="grid gap-6 md:grid-cols-2">
-        
-        {/* Left Column: Unpaid Savings */}
         <div className="rounded-3xl bg-white p-6 shadow-lg border border-gray-100">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Monthly Contributions (&lt; 350)</h2>
           <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto pr-2">
@@ -203,7 +192,6 @@ export default async function AdminDashboard({
           </div>
         </div>
 
-        {/* Right Column: Active Loans */}
         <div className="rounded-3xl bg-white p-6 shadow-lg border border-gray-100">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Active Loans Overview</h2>
           <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto pr-2">
@@ -234,7 +222,6 @@ export default async function AdminDashboard({
         </div>
       </div>
 
-      {/* TOTAL MONTHLY CONTRIBUTION */}
       <div className="rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white shadow-xl flex justify-between items-center">
         <div>
           <p className="text-indigo-100 font-medium">Total Monthly Contribution (Users &ge; 350)</p>

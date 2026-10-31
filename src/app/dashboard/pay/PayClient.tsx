@@ -42,6 +42,8 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
     try {
       await submitBulkPayment(fd);
       router.push("/dashboard?msg=Payment submitted for approval");
+      router.refresh();
+      // Do not set loading to false, wait for the redirect
     } catch (error: any) {
       setErr(error.message || "Something went wrong.");
       setLoading(false);

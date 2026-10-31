@@ -25,7 +25,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         ← Back to Users
       </Link>
       
-      {/* User Info Header */}
       <div className="rounded-3xl bg-gradient-to-r from-indigo-900 to-gray-900 p-8 text-white shadow-xl">
         <h1 className="text-3xl font-bold">{user.fullName}</h1>
         <div className="mt-4 flex flex-wrap gap-6 text-sm text-indigo-200">
@@ -36,7 +35,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      {/* Balances Grid */}
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
           <p className="text-sm text-gray-500">Total Savings</p>
@@ -56,10 +54,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      {/* Tables for Loans and Transactions */}
       <div className="grid gap-6 md:grid-cols-2">
-        
-        {/* Loans Table */}
         <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Loan History</h2>
           <div className="space-y-4">
@@ -88,28 +83,34 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
           </div>
         </div>
 
-        {/* Transactions Table */}
         <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Payment History</h2>
           <div className="space-y-3">
             {user.payments.length === 0 ? (
               <p className="text-sm text-gray-500">No payments recorded.</p>
             ) : (
-              user.payments.map((p: any) => (
-                <div key={p.id} className="flex justify-between items-center rounded-xl bg-gray-50 p-3 border border-gray-100">
-                  <div>
-                    <p className="font-bold text-gray-800 capitalize">{p.type} - {fmt(p.amount)}</p>
-                    <p className="text-xs text-gray-500">Paid: {fmtDate(p.paidOn)} | Status: {p.status}</p>
+              user.payments.map((p: any) => {
+                const breakdown = JSON.parse(p.breakdown || "{}");
+                return (
+                  <div key={p.id} className="flex justify-between items-center rounded-xl bg-gray-50 p-3 border border-gray-100">
+                    <div>
+                      <p className="font-bold text-gray-800">Total: {fmt(p.totalAmount)}</p>
+                      <p className="text-xs text-gray-500">
+                        {breakdown.savings > 0 && `Savings: ${fmt(breakdown.savings)} `}
+                        {breakdown.normal > 0 && `| Normal: ${fmt(breakdown.normal)} `}
+                        {breakdown.emergency > 0 && `| Emergency: ${fmt(breakdown.emergency)}`}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">Paid: {fmtDate(p.paidOn)} | Status: {p.status}</p>
+                    </div>
+                    {p.status === "rejected" && p.rejectReason && (
+                      <span className="text-xs text-red-600 max-w-[150px] text-right">Reason: {p.rejectReason}</span>
+                    )}
                   </div>
-                  {p.status === "rejected" && p.rejectReason && (
-                    <span className="text-xs text-red-600 max-w-[150px] text-right">Reason: {p.rejectReason}</span>
-                  )}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
-
       </div>
     </div>
   );
