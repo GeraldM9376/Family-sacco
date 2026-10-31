@@ -1,10 +1,7 @@
 "use client";
 import { useState } from "react";
-import { createLoan } from "../../actions";
-import { useRouter } from "next/navigation";
 
 export default function NewLoanPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
@@ -14,12 +11,28 @@ export default function NewLoanPage() {
     setErr("");
 
     const fd = new FormData(e.currentTarget);
+    const body = Object.fromEntries(fd.entries());
 
     try {
-      await createLoan(fd);
+      const res = await fetch("/api/admin/create-loan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErr(data.error || "Failed to issue loan.");
+        setLoading(false);
+        return;
+      }
+
+      // Hard reload to show success and stop spinner
       window.location.href = "/admin?msg=Loan issued successfully";
+      
     } catch (error: any) {
-      setErr(error.message || "Invalid User ID or loan details.");
+      setErr("Something went wrong. Please try again.");
       setLoading(false);
     }
   }

@@ -1,11 +1,40 @@
-import { adminRecordPayment } from "../../actions";
-import { redirect } from "next/navigation";
+"use client";
+import { useState } from "react";
 
 export default function AdminPaymentPage() {
-  async function handleSubmit(formData: FormData) {
-    "use server";
-    await adminRecordPayment(formData);
-    redirect("/admin?msg=Payment recorded successfully");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setErr("");
+
+    const fd = new FormData(e.currentTarget);
+    const body = Object.fromEntries(fd.entries());
+
+    try {
+      const res = await fetch("/api/admin/record-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErr(data.error || "Failed to record payment.");
+        setLoading(false); // Stop spinner on error
+        return;
+      }
+
+      // Hard redirect on success
+      window.location.href = "/admin?msg=Payment recorded successfully";
+      
+    } catch (error: any) {
+      setErr("Something went wrong. Please try again.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -13,16 +42,16 @@ export default function AdminPaymentPage() {
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Record Payment for User</h1>
       <p className="mb-6 text-sm text-gray-500">Use this if a user has paid you directly (e.g., via M-Pesa) and you want to update their account immediately.</p>
       
-      <form action={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="mb-1 block text-sm font-bold text-gray-700">User ID Number</label>
           <input name="idNumber" required placeholder="e.g. 12345678"
-            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500" />
+            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-indigo-500" />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-bold text-gray-700">Payment Type</label>
-          <select name="type" className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500 bg-white">
+          <select name="type" className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-indigo-500 bg-white">
             <option value="savings">Savings</option>
             <option value="normal">Normal Loan Repayment</option>
             <option value="emergency">Emergency Loan Repayment</option>
@@ -33,23 +62,26 @@ export default function AdminPaymentPage() {
           <div>
             <label className="mb-1 block text-sm font-bold text-gray-700">Amount (KES)</label>
             <input name="amount" type="number" min="1" required placeholder="e.g. 1000"
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500" />
+              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-indigo-500" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-bold text-gray-700">Date Paid</label>
             <input name="paidOn" type="date" required
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500" />
+              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-indigo-500" />
           </div>
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-bold text-gray-700">Name on Payment (Caps)</label>
           <input name="payerName" required placeholder="JOHN DOE"
-            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500 uppercase" />
+            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-indigo-500 uppercase" />
         </div>
 
-        <button className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 transition">
-          Record Payment Instantly
+        {err && <p className="text-red-500 text-sm font-bold bg-red-50 p-2 rounded">{err}</p>}
+
+        <button type="submit" disabled={loading}
+          className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 transition disabled:opacity-50 flex justify-center items-center gap-2">
+          {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : "Record Payment Instantly"}
         </button>
       </form>
     </div>
