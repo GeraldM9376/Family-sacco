@@ -43,9 +43,9 @@ export default function DeleteUserPage() {
         return;
       }
 
-      // Success! Redirect to users list
-      router.push("/admin/users?msg=User deleted successfully");
-      router.refresh();
+      // HARD REDIRECT: This reloads the whole browser, guaranteeing the spinner stops
+      window.location.href = "/admin/users?msg=User deleted successfully";
+      
     } catch (error: any) {
       setErr("Something went wrong. Please try again.");
       setLoading(false); // Stop loading on exception
