@@ -16,8 +16,10 @@ export default async function AdminDashboard({
   const currentMonth = resolvedParams.month ? parseInt(resolvedParams.month) : now.getMonth();
   const currentYear = resolvedParams.year ? parseInt(resolvedParams.year) : now.getFullYear();
 
-  const startOfMonth = new Date(currentYear, currentMonth, 1);
-  const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+  // Force East Africa Time (EAT) for accurate filtering
+  // EAT is UTC+3
+  const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0) - 3 * 60 * 60 * 1000);
+  const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999) - 3 * 60 * 60 * 1000);
 
   const pendingPayments = await prisma.payment.findMany({
     where: { status: "pending" },
