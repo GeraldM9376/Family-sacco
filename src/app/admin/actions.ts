@@ -43,3 +43,19 @@ export async function approvePayment(paymentId: string) {
   revalidatePath("/admin/payments");
   revalidatePath("/dashboard");
 }
+
+export async function saveSettings(formData: FormData) {
+  const paybill = formData.get("paybill") as string;
+  const accountNo = formData.get("accountNo") as string;
+  const sendMoneyTo = formData.get("sendMoneyTo") as string;
+  const adminName = formData.get("adminName") as string;
+
+  await prisma.setting.upsert({
+    where: { id: 1 },
+    update: { paybill, accountNo, sendMoneyTo, adminName },
+    create: { id: 1, paybill, accountNo, sendMoneyTo, adminName },
+  });
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/dashboard/pay");
+}
