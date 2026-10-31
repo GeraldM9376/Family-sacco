@@ -27,7 +27,6 @@ export default function ForgotPage() {
     
     if (!res.ok) return setMsg({ text: data.error, type: "error" });
     
-    // Move to step 2 and show a masked email so they know where it was sent
     setStep(2);
     const maskedEmail = data.email.replace(/(.{2})(.*)(?=@)/, "$1***$2");
     setMsg({ text: `Code sent to ${maskedEmail}. Check your inbox.`, type: "success" });
@@ -52,28 +51,28 @@ export default function ForgotPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-3xl bg-white p-8 shadow-2xl border border-gray-100 mt-10">
-      <h1 className="mb-2 text-2xl font-bold text-gray-900 text-center">Reset Password</h1>
+    <div className="mx-auto max-w-md rounded-3xl bg-slate-800 p-8 shadow-2xl border border-slate-700 mt-10">
+      <h1 className="mb-2 text-2xl font-bold text-white text-center">Reset Password</h1>
       
       {step === 1 ? (
         <>
-          <p className="mb-8 text-sm text-gray-500 text-center">
+          <p className="mb-8 text-sm text-slate-400 text-center">
             Enter your ID Number. We will send a 5-minute reset code to the email address registered to your account.
           </p>
           <form onSubmit={sendCode} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-bold text-gray-700">Your ID Number</label>
+              <label className="mb-1 block text-sm font-bold text-slate-300">Your ID Number</label>
               <input 
                 type="text" 
                 placeholder="e.g. 12345678" 
                 required 
                 value={idNumber}
                 onChange={(e) => setIdNumber(e.target.value)}
-                className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500" 
+                className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-indigo-500" 
               />
             </div>
             <Message text={msg?.text} type={msg?.type} />
-            <button disabled={loading} className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 transition disabled:opacity-60 flex justify-center items-center gap-2">
+            <button disabled={loading} className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-500 transition disabled:opacity-60 flex justify-center items-center gap-2">
               {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : "Send Code"}
             </button>
           </form>
@@ -83,37 +82,37 @@ export default function ForgotPage() {
           <Message text={msg?.text} type={msg?.type} />
           
           <div>
-            <label className="mb-1 block text-sm font-bold text-gray-700">6-Digit Code</label>
+            <label className="mb-1 block text-sm font-bold text-slate-300">6-Digit Code</label>
             <input 
               placeholder="000000" 
               required 
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-center text-xl tracking-[0.5em] font-mono outline-none focus:border-indigo-500" 
+              className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-center text-xl tracking-[0.5em] font-mono text-white placeholder-slate-500 outline-none focus:border-indigo-500" 
             />
           </div>
           
           <div>
-            <label className="mb-1 block text-sm font-bold text-gray-700">New Password</label>
+            <label className="mb-1 block text-sm font-bold text-slate-300">New Password</label>
             <input 
               type="password" 
               placeholder="••••••••" 
               required 
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500" 
+              className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-indigo-500" 
             />
-            <p className="text-xs text-gray-500 mt-1">Must have 8+ chars, upper, lower, number, symbol.</p>
+            <p className="text-xs text-slate-500 mt-1">Must have 8+ chars, upper, lower, number, symbol.</p>
           </div>
 
-          <button disabled={loading} className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 transition disabled:opacity-60 flex justify-center items-center gap-2">
+          <button disabled={loading} className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-500 transition disabled:opacity-60 flex justify-center items-center gap-2">
             {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : "Reset Password"}
           </button>
         </form>
       )}
 
-      <p className="mt-6 text-center text-sm text-gray-500">
-        Remembered it? <Link href="/login" className="text-indigo-600 font-bold hover:underline">Back to Login</Link>
+      <p className="mt-6 text-center text-sm text-slate-400">
+        Remembered it? <Link href="/login" className="text-indigo-400 font-bold hover:underline">Back to Login</Link>
       </p>
     </div>
   );
