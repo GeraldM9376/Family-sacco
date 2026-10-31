@@ -18,7 +18,7 @@ export default async function Dashboard() {
     },
   });
 
-  if (!user) return <p>Loading…</p>;
+  if (!user) return <p className="text-white p-8">Loading…</p>;
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -50,134 +50,180 @@ export default async function Dashboard() {
   const normalOriginal = normalLoans.reduce((a: number, l: any) => a + l.amountToPay, 0);
   const emergencyOriginal = emergencyLoans.reduce((a: number, l: any) => a + l.amountToPay, 0);
 
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const currentMonthName = months[now.getMonth()];
+
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user.fullName.split(" ")[0];
 
+  const totalDebt = normalTotal + emergencyTotal;
+  let statusMessage = "";
+  let statusColor = "";
+  
+  if (totalDebt === 0 && user.savingsTotal > 1000) {
+    statusMessage = "You are completely debt-free and your savings are growing strong. Amazing work!";
+    statusColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+  } else if (totalDebt === 0) {
+    statusMessage = "You have zero active loans. A clean slate! Keep building your wealth.";
+    statusColor = "bg-slate-800 text-slate-300 border-slate-700";
+  } else {
+    statusMessage = "You have active loans. Every payment brings you closer to financial freedom.";
+    statusColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 pb-12">
+      
+      {/* Header with Greeting & Details */}
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-white">
-            {greeting}, {firstName}
+            {greeting}, <span className="text-indigo-400">{firstName}</span>
           </h1>
-          <p className="text-slate-400 mt-1">Here is your financial overview.</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-sm text-slate-400">
+            <p>ID: <span className="text-slate-200 font-mono">{user.idNumber}</span></p>
+            <p>Phone: <span className="text-slate-200">{user.phone}</span></p>
+            <p>Joined: <span className="text-slate-200">{fmtDate(user.createdAt)}</span></p>
+          </div>
         </div>
-        <Link href="/dashboard/pay" className="rounded-xl bg-indigo-600 px-6 py-2.5 text-center font-semibold text-white shadow-md hover:bg-indigo-700 transition">
+        <Link href="/dashboard/pay" className="rounded-xl bg-indigo-600 px-6 py-2.5 text-center font-bold text-white hover:bg-indigo-500 transition shadow-lg">
           Make a Payment
         </Link>
       </div>
 
-      {/* Progress Cards */}
+      {/* Status Banner */}
+      <div className={`rounded-xl border p-4 flex items-center gap-4 ${statusColor}`}>
+        <div className="text-2xl">{totalDebt === 0 ? "🏆" : "🎯"}</div>
+        <p className="font-medium">{statusMessage}</p>
+      </div>
+
+      {/* Monthly Snapshot */}
       <div className="grid gap-6 md:grid-cols-3">
-        
-        {/* Savings Card */}
-        <div className="rounded-3xl bg-slate-800 p-6 shadow-lg border border-slate-700">
-          <p className="text-sm font-medium text-slate-400">Total Savings</p>
-          <p className="mt-2 text-4xl font-extrabold text-white">{fmt(user.savingsTotal)}</p>
-          <div className="mt-6">
-            <div className="flex justify-between text-xs text-slate-400 mb-1">
-              <span>Minimum: KES 350</span>
-              <span>{Math.round(savingsPct(user.savingsTotal))}%</span>
-            </div>
-            <Bar pct={savingsPct(user.savingsTotal)} color="emerald" />
-          </div>
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Saved in {currentMonthName}</p>
+          <p className="text-3xl font-extrabold text-white">{fmt(monthSavings)}</p>
         </div>
-
-        {/* Normal Loan Card */}
-        <div className="rounded-3xl bg-slate-800 p-6 shadow-lg border border-slate-700">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-slate-400">Normal Loan Debt</p>
-              <p className={`mt-2 text-3xl font-bold ${normalTotal === 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {fmt(normalTotal)}
-              </p>
-            </div>
-            <div className={`p-3 rounded-full ${normalTotal === 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>
-              {normalTotal === 0 ? "✓" : "!"}
-            </div>
-          </div>
-          <div className="mt-6">
-            <div className="flex justify-between text-xs text-slate-400 mb-1">
-              <span>{normalTotal === 0 ? "Fully Settled" : "Repayment Progress"}</span>
-              <span>{Math.round(loanPct(normalTotal, normalOriginal))}%</span>
-            </div>
-            <Bar pct={loanPct(normalTotal, normalOriginal)} color={loanBarColor(normalTotal) as any} />
-          </div>
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Loans Paid in {currentMonthName}</p>
+          <p className="text-3xl font-extrabold text-white">{fmt(monthLoansPaid)}</p>
         </div>
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Total Savings</p>
+          <p className="text-3xl font-extrabold text-white">{fmt(user.savingsTotal)}</p>
+        </div>
+      </div>
 
-        {/* Emergency Loan Card */}
-        <div className="rounded-3xl bg-slate-800 p-6 shadow-lg border border-slate-700">
-          <div className="flex justify-between items-start">
+      {/* Progress Cards */}
+      <div>
+        <h2 className="text-xl font-bold text-white mb-4">Financial Progress</h2>
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Savings Card */}
+          <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
+            <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-1">Savings Progress</p>
+            <p className="mt-2 text-3xl font-extrabold text-white mb-6">{fmt(user.savingsTotal)}</p>
             <div>
-              <p className="text-sm font-medium text-slate-400">Emergency Loan Debt</p>
-              <p className={`mt-2 text-3xl font-bold ${emergencyTotal === 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {fmt(emergencyTotal)}
-              </p>
-            </div>
-            <div className={`p-3 rounded-full ${emergencyTotal === 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>
-              {emergencyTotal === 0 ? "✓" : "!"}
+              <div className="flex justify-between text-xs text-slate-400 mb-2 font-medium">
+                <span>Target: KES 350</span>
+                <span>{Math.round(savingsPct(user.savingsTotal))}%</span>
+              </div>
+              <Bar pct={savingsPct(user.savingsTotal)} color="emerald" />
             </div>
           </div>
-          <div className="mt-6">
-            <div className="flex justify-between text-xs text-slate-400 mb-1">
-              <span>{emergencyTotal === 0 ? "Fully Settled" : "Repayment Progress"}</span>
-              <span>{Math.round(loanPct(emergencyTotal, emergencyOriginal))}%</span>
+
+          {/* Normal Loan Card */}
+          <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
+            <div className="flex justify-between items-start mb-1">
+              <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Normal Loan Debt</p>
+              <div className={`px-2 py-0.5 rounded text-xs font-bold ${normalTotal === 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                {normalTotal === 0 ? "SETTLED" : "ACTIVE"}
+              </div>
             </div>
-            <Bar pct={loanPct(emergencyTotal, emergencyOriginal)} color={loanBarColor(emergencyTotal) as any} />
+            <p className="mt-2 text-3xl font-extrabold text-white">{fmt(normalTotal)}</p>
+            <div className="mt-6">
+              <div className="flex justify-between text-xs text-slate-400 mb-2 font-medium">
+                <span>Repayment Progress</span>
+                <span>{Math.round(loanPct(normalTotal, normalOriginal))}%</span>
+              </div>
+              <Bar pct={loanPct(normalTotal, normalOriginal)} color={loanBarColor(normalTotal) as any} />
+            </div>
+          </div>
+
+          {/* Emergency Loan Card */}
+          <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
+            <div className="flex justify-between items-start mb-1">
+              <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Emergency Loan Debt</p>
+              <div className={`px-2 py-0.5 rounded text-xs font-bold ${emergencyTotal === 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                {emergencyTotal === 0 ? "SETTLED" : "ACTIVE"}
+              </div>
+            </div>
+            <p className="mt-2 text-3xl font-extrabold text-white">{fmt(emergencyTotal)}</p>
+            <div className="mt-6">
+              <div className="flex justify-between text-xs text-slate-400 mb-2 font-medium">
+                <span>Repayment Progress</span>
+                <span>{Math.round(loanPct(emergencyTotal, emergencyOriginal))}%</span>
+              </div>
+              <Bar pct={loanPct(emergencyTotal, emergencyOriginal)} color={loanBarColor(emergencyTotal) as any} />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Pending Approvals & Upcoming Loans */}
+      {/* Activity Lists */}
       <div className="grid gap-6 md:grid-cols-2">
-        
-        {/* Pending Approvals */}
-        <div className="rounded-3xl bg-slate-800 p-6 shadow-lg border border-slate-700">
-          <h2 className="mb-4 text-lg font-bold text-white">Pending Approvals</h2>
-          {user.payments.length === 0 ? (
-            <p className="text-sm text-slate-400">No payments waiting for approval.</p>
-          ) : (
-            <div className="space-y-3">
-              {user.payments.map((p: any) => {
-                const b = JSON.parse(p.breakdown || "{}");
-                return (
-                  <div key={p.id} className="flex items-center justify-between rounded-xl bg-slate-900 p-4 border border-slate-700">
-                    <div>
-                      <p className="text-sm font-bold text-white">Total: {fmt(p.totalAmount)}</p>
-                      <p className="text-xs text-slate-400">
-                        {b.savings > 0 && `Savings: ${fmt(b.savings)} `}
-                        {b.normal > 0 && `| Normal: ${fmt(b.normal)} `}
-                        {b.emergency > 0 && `| Emergency: ${fmt(b.emergency)}`}
-                      </p>
+        <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-800 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-white">Pending Approvals</h2>
+            {user.payments.length > 0 && <span className="bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700">{user.payments.length}</span>}
+          </div>
+          <div className="p-5">
+            {user.payments.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No pending payments. You are all caught up.</p>
+            ) : (
+              <div className="space-y-3">
+                {user.payments.map((p: any) => {
+                  const b = JSON.parse(p.breakdown || "{}");
+                  return (
+                    <div key={p.id} className="flex items-center justify-between rounded-xl bg-slate-800/50 p-4 border border-slate-700/50">
+                      <div>
+                        <p className="text-sm font-bold text-white">Total: {fmt(p.totalAmount)}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {b.savings > 0 && `Savings: ${fmt(b.savings)} `}
+                          {b.normal > 0 && `| Normal: ${fmt(b.normal)} `}
+                          {b.emergency > 0 && `| Emergency: ${fmt(b.emergency)}`}
+                        </p>
+                      </div>
+                      <span className="rounded bg-slate-800 px-2 py-1 text-[10px] font-bold text-amber-400 border border-slate-700 uppercase">Pending</span>
                     </div>
-                    <span className="rounded-full bg-amber-500/20 px-2 py-1 text-xs font-bold text-amber-400">Pending</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Active Loans */}
-        <div className="rounded-3xl bg-slate-800 p-6 shadow-lg border border-slate-700">
-          <h2 className="mb-4 text-lg font-bold text-white">Upcoming Loan Due Dates</h2>
-          {user.loans.length === 0 ? (
-            <p className="text-sm text-slate-400">You have no active loans.</p>
-          ) : (
-            <div className="space-y-3">
-              {user.loans.map((l: any) => (
-                <div key={l.id} className="flex items-center justify-between rounded-xl bg-slate-900 p-4 border border-slate-700">
-                  <div>
-                    <p className="text-sm font-bold text-white capitalize">{l.type} Loan</p>
-                    <p className="text-xs text-slate-400">Due: {fmtDate(l.dueDate)}</p>
+        <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-800 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-white">Upcoming Due Dates</h2>
+            {user.loans.length > 0 && <span className="bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700">{user.loans.length}</span>}
+          </div>
+          <div className="p-5">
+            {user.loans.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">You have no active loans.</p>
+            ) : (
+              <div className="space-y-3">
+                {user.loans.map((l: any) => (
+                  <div key={l.id} className="flex items-center justify-between rounded-xl bg-slate-800/50 p-4 border border-slate-700/50">
+                    <div>
+                      <p className="text-sm font-bold text-white capitalize">{l.type} Loan</p>
+                      <p className="text-xs text-slate-400 mt-1">Due: {fmtDate(l.dueDate)}</p>
+                    </div>
+                    <span className="font-bold text-white">{fmt(l.amountToPay - l.paidAmount)}</span>
                   </div>
-                  <span className="font-semibold text-red-400">{fmt(l.amountToPay - l.paidAmount)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
