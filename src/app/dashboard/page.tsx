@@ -57,14 +57,16 @@ export default async function Dashboard() {
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user.fullName.split(" ")[0];
 
+  const hasActiveLoans = user.loans.length > 0;
   const totalDebt = normalTotal + emergencyTotal;
+  
   let statusMessage = "";
   let statusColor = "";
   
-  if (totalDebt === 0 && user.savingsTotal > 1000) {
+  if (!hasActiveLoans && user.savingsTotal > 1000) {
     statusMessage = "You are completely debt-free and your savings are growing strong. Amazing work!";
     statusColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-  } else if (totalDebt === 0) {
+  } else if (!hasActiveLoans) {
     statusMessage = "You have zero active loans. A clean slate! Keep building your wealth.";
     statusColor = "bg-slate-800 text-slate-300 border-slate-700";
   } else {
