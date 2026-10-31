@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function submitBulkPayment(formData: FormData) {
   const s = await getServerSession(authOptions);
-  if (!s?.user) throw new Error("You must be logged in to make a payment.");
+  if (!s?.user) throw new Error("Not logged in");
   const userId = (s.user as any).id;
 
   const method = formData.get("method") as string;
@@ -19,11 +19,11 @@ export async function submitBulkPayment(formData: FormData) {
   const emergencyAmt = Number(formData.get("emergencyAmt")) || 0;
 
   if (!method || !payerName || isNaN(paidOn.getTime()) || totalAmount <= 0) {
-    throw new Error("Invalid payment details. Please check your amounts and date.");
+    throw new Error("Invalid payment details.");
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) throw new Error("User account not found.");
+  if (!user) throw new Error("User not found");
 
   if (normalAmt > user.normalDebt) throw new Error("Cannot pay more than your normal loan debt.");
   if (emergencyAmt > user.emergencyDebt) throw new Error("Cannot pay more than your emergency loan debt.");

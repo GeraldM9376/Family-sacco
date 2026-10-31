@@ -33,7 +33,6 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
     setErr("");
     
     const fd = new FormData(e.currentTarget);
-    
     fd.append("totalAmount", total?.toString() || "0");
     fd.append("savingsAmt", amounts.savings || "0");
     fd.append("normalAmt", amounts.normal || "0");
@@ -44,8 +43,7 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
       await submitBulkPayment(fd);
       router.push("/dashboard?msg=Payment submitted for approval");
     } catch (error: any) {
-      console.error(error);
-      setErr(error.message || "Something went wrong. Please try again.");
+      setErr(error.message || "Something went wrong.");
       setLoading(false);
     }
   }
@@ -57,7 +55,6 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
         <p className="text-gray-500 mt-1">Select what you are paying for and calculate your total.</p>
       </div>
 
-      {/* Step 1: Select Amounts */}
       {!showOptions && (
         <div className="rounded-3xl bg-white p-8 shadow-lg border border-gray-100 space-y-4">
           <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl">
@@ -95,7 +92,6 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
         </div>
       )}
 
-      {/* Step 2: Choose Method */}
       {showOptions && (
         <div className="rounded-3xl bg-white p-8 shadow-lg border border-gray-100">
           <div className="mb-6 rounded-xl bg-emerald-50 p-6 text-center border border-emerald-100">
@@ -109,37 +105,37 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
             <button onClick={() => setMethod("self")} className={`rounded-xl border-2 p-4 text-center transition ${method === "self" ? "border-indigo-600 bg-indigo-50" : "border-gray-200 hover:border-indigo-300"}`}>
               <span className="block text-2xl mb-1">📱</span>
               <span className="font-bold text-gray-900 text-sm">Pay by Myself</span>
-              <span className="block text-xs text-gray-500 mt-1">Via Paybill / Bank</span>
+              <span className="block text-xs text-gray-500 mt-1">Via Bank/Paybill</span>
             </button>
             <button onClick={() => setMethod("admin")} className={`rounded-xl border-2 p-4 text-center transition ${method === "admin" ? "border-indigo-600 bg-indigo-50" : "border-gray-200 hover:border-indigo-300"}`}>
               <span className="block text-2xl mb-1">👨‍💼</span>
               <span className="font-bold text-gray-900 text-sm">Admin Pays for Me</span>
-              <span className="block text-xs text-gray-500 mt-1">Send to Admin Number</span>
+              <span className="block text-xs text-gray-500 mt-1">Send to Admin</span>
             </button>
           </div>
 
           {method && (
             <form onSubmit={handleSubmit} className="space-y-4 border-t border-gray-200 pt-6">
-              {method === "self" && (
-                <div className="bg-indigo-50 p-4 rounded-xl mb-4 text-sm">
-                  <p className="font-bold text-indigo-900 mb-2">Payment Details</p>
-                  <p><strong>Paybill:</strong> {setting?.paybill || "Not set"}</p>
-                  <p><strong>Account:</strong> {setting?.accountNo || "Not set"}</p>
-                  <p className="text-xs text-indigo-600 mt-2">Use your ID number as the account number.</p>
-                </div>
-              )}
-              {method === "admin" && (
-                <div className="bg-indigo-50 p-4 rounded-xl mb-4 text-sm">
-                  <p className="font-bold text-indigo-900 mb-2">Send Money To Admin</p>
-                  <p><strong>Phone:</strong> {setting?.sendMoneyTo || "Not set"}</p>
-                  <p><strong>Name:</strong> {setting?.adminName || "Not set"}</p>
-                  <p className="text-xs text-indigo-600 mt-2">After sending, fill the form below to submit for approval.</p>
-                </div>
-              )}
+              <div className="bg-indigo-50 p-4 rounded-xl mb-4 text-sm">
+                {method === "self" ? (
+                  <>
+                    <p className="font-bold text-indigo-900 mb-2">Bank/Paybill Details</p>
+                    <p><strong>Paybill:</strong> {setting?.paybill || "Not set"}</p>
+                    <p><strong>Account:</strong> {setting?.accountNo || "Not set"}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-bold text-indigo-900 mb-2">Send Money To Admin</p>
+                    <p><strong>Phone:</strong> {setting?.sendMoneyTo || "Not set"}</p>
+                    <p><strong>Name:</strong> {setting?.adminName || "Not set"}</p>
+                  </>
+                )}
+                <p className="text-xs text-indigo-600 mt-2">After sending, fill the form below to submit for approval.</p>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Your Full Name</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Name on Payment</label>
                   <input name="payerName" required defaultValue={user.fullName} readOnly
                     className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 outline-none uppercase" />
                 </div>
