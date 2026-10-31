@@ -6,7 +6,7 @@ import { connection } from "next/server";
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; msg?: string }>; // Added msg
+  searchParams: Promise<{ q?: string; msg?: string }>;
 }) {
   await connection();
 
@@ -29,21 +29,20 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
-      {/* Show success message if redirected from delete page */}
       {msg && (
-        <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-200 font-bold">
+        <div className="bg-emerald-500/20 text-emerald-400 p-4 rounded-xl border border-emerald-500/30 font-bold">
           {msg}
         </div>
       )}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Manage Users</h1>
-          <p className="text-gray-500">Search and view all registered members.</p>
+          <h1 className="text-3xl font-extrabold text-white">Manage Users</h1>
+          <p className="text-slate-400">Search and view all registered members.</p>
         </div>
         
         <div className="flex gap-2">
-          <Link href="/admin/users/delete" className="rounded-xl bg-red-100 px-4 py-2.5 font-bold text-red-700 hover:bg-red-200 transition">
+          <Link href="/admin/users/delete" className="rounded-xl bg-red-500/20 px-4 py-2.5 font-bold text-red-400 hover:bg-red-500/30 transition">
             Delete User
           </Link>
           <form className="flex w-full md:w-96 gap-2">
@@ -52,20 +51,20 @@ export default async function AdminUsersPage({
               name="q"
               defaultValue={q}
               placeholder="Search by Name, ID or Phone..."
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 outline-none focus:border-indigo-500"
+              className="w-full rounded-xl border-2 border-slate-700 bg-slate-800 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
             />
-            <button className="rounded-xl bg-indigo-600 px-6 font-bold text-white hover:bg-indigo-700 transition">
+            <button className="rounded-xl bg-indigo-600 px-6 font-bold text-white hover:bg-indigo-500 transition">
               Search
             </button>
           </form>
         </div>
       </div>
 
-      <div className="rounded-3xl bg-white shadow-lg border border-gray-100 overflow-hidden">
+      <div className="rounded-3xl bg-slate-800 shadow-lg border border-slate-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-600">
+              <tr className="bg-slate-900 border-b border-slate-700 text-sm font-semibold text-slate-300">
                 <th className="p-4">Name</th>
                 <th className="p-4">ID Number</th>
                 <th className="p-4">Phone</th>
@@ -75,28 +74,28 @@ export default async function AdminUsersPage({
                 <th className="p-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-700">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <td colSpan={7} className="p-8 text-center text-slate-400">
                     No users found matching "{q}".
                   </td>
                 </tr>
               ) : (
                 users.map((user: any) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition">
-                    <td className="p-4 font-bold text-gray-900">{user.fullName}</td>
-                    <td className="p-4 font-mono text-gray-600">{user.idNumber}</td>
-                    <td className="p-4 text-gray-600">{user.phone}</td>
-                    <td className="p-4 text-right font-semibold text-emerald-600">{fmt(user.savingsTotal)}</td>
-                    <td className={`p-4 text-right font-semibold ${user.normalDebt > 0 ? "text-red-500" : "text-gray-400"}`}>
+                  <tr key={user.id} className="hover:bg-slate-700/50 transition">
+                    <td className="p-4 font-bold text-white">{user.fullName}</td>
+                    <td className="p-4 font-mono text-slate-300">{user.idNumber}</td>
+                    <td className="p-4 text-slate-300">{user.phone}</td>
+                    <td className="p-4 text-right font-semibold text-emerald-400">{fmt(user.savingsTotal)}</td>
+                    <td className={`p-4 text-right font-semibold ${user.normalDebt > 0 ? "text-red-400" : "text-slate-500"}`}>
                       {fmt(user.normalDebt)}
                     </td>
-                    <td className={`p-4 text-right font-semibold ${user.emergencyDebt > 0 ? "text-red-500" : "text-gray-400"}`}>
+                    <td className={`p-4 text-right font-semibold ${user.emergencyDebt > 0 ? "text-red-400" : "text-slate-500"}`}>
                       {fmt(user.emergencyDebt)}
                     </td>
                     <td className="p-4 text-center">
-                      <Link href={`/admin/users/${user.id}`} className="text-sm font-bold text-indigo-600 hover:underline">
+                      <Link href={`/admin/users/${user.id}`} className="text-sm font-bold text-indigo-400 hover:underline">
                         View Profile
                       </Link>
                     </td>
