@@ -29,6 +29,8 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (loading) return; // Prevent double clicks
+
     setLoading(true);
     setErr("");
     
@@ -41,12 +43,13 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
 
     try {
       await submitBulkPayment(fd);
-      router.push("/dashboard?msg=Payment submitted for approval");
-      router.refresh();
-      // Do not set loading to false, wait for the redirect
+      
+      // Hard redirect to guarantee the spinner stops and page reloads
+      window.location.href = "/dashboard?msg=Payment submitted for approval";
+      
     } catch (error: any) {
-      setErr(error.message || "Something went wrong.");
-      setLoading(false);
+      setErr(error.message || "Something went wrong. Please try again.");
+      setLoading(false); // Stop the spinner on error
     }
   }
 
