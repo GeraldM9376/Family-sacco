@@ -16,40 +16,41 @@ export default async function MyLoansPage() {
     },
   });
 
-  if (!user) return null;
+  if (!user) return <p className="text-white p-8">Loading…</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-slate-950 min-h-screen p-4 md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-white">My Loans</h1>
           <p className="text-slate-400 mt-1">Track all the loans you've taken and their due dates.</p>
         </div>
-        <Link href="/dashboard" className="rounded-xl bg-slate-800 px-6 py-2.5 font-semibold text-white shadow-sm border border-slate-700 hover:bg-slate-700">
+        <Link href="/dashboard" className="rounded-xl bg-slate-800 px-6 py-2.5 font-semibold text-white shadow-sm border border-slate-700 hover:bg-slate-700 transition">
           Back to Dashboard
         </Link>
       </div>
 
-      <div className="rounded-2xl bg-indigo-500/10 border border-indigo-500/20 p-6 text-white flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* Dark Mode Request Banner */}
+      <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
         <div>
-          <h3 className="font-bold text-lg text-indigo-300">Want to request a new loan?</h3>
-          <p className="text-sm text-indigo-200 mt-1">Loan requests are currently handled manually by the admin.</p>
+          <h3 className="font-bold text-lg text-white">Want to request a new loan?</h3>
+          <p className="text-sm text-slate-400 mt-1">Loan requests are currently handled manually by the admin.</p>
         </div>
-        <div className="bg-indigo-600 text-white rounded-xl px-4 py-2 text-sm font-bold shadow-md">
+        <div className="bg-indigo-600 text-white rounded-xl px-4 py-2 text-sm font-bold shadow-md hover:bg-indigo-500 transition cursor-pointer">
           Contact Admin to Request Loan
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {user.loans.length === 0 ? (
-          <div className="col-span-2 rounded-2xl bg-slate-800 p-10 text-center border border-slate-700 shadow-sm">
+          <div className="col-span-2 rounded-2xl bg-slate-900 p-10 text-center border border-slate-800 shadow-sm">
             <p className="text-slate-400">You have not taken any loans yet.</p>
           </div>
         ) : (
           user.loans.map((loan: any) => {
             const remaining = loan.amountToPay - loan.paidAmount;
             return (
-              <div key={loan.id} className="rounded-2xl bg-slate-800 p-6 shadow-sm border border-slate-700">
+              <div key={loan.id} className="rounded-2xl bg-slate-900 p-6 shadow-sm border border-slate-800">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{loan.type} Loan</span>
@@ -63,19 +64,19 @@ export default async function MyLoansPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                  <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                  <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
                     <p className="text-slate-400 text-xs">Amount Issued</p>
                     <p className="font-semibold text-white">{fmt(loan.principal)}</p>
                   </div>
-                  <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                  <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
                     <p className="text-slate-400 text-xs">Date Issued</p>
                     <p className="font-semibold text-white">{fmtDate(loan.issuedOn)}</p>
                   </div>
-                  <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                  <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
                     <p className="text-slate-400 text-xs">Due Date</p>
                     <p className="font-semibold text-red-400">{fmtDate(loan.dueDate)}</p>
                   </div>
-                  <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                  <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
                     <p className="text-slate-400 text-xs">Amount Paid</p>
                     <p className="font-semibold text-emerald-400">{fmt(loan.paidAmount)}</p>
                   </div>
@@ -86,7 +87,7 @@ export default async function MyLoansPage() {
                     <span className="font-medium text-slate-300">Remaining Debt</span>
                     <span className="font-bold text-white">{fmt(remaining)}</span>
                   </div>
-                  <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
                     <div 
                       className={`h-full rounded-full ${remaining === 0 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
                       style={{ width: `${Math.min(100, (loan.paidAmount / loan.amountToPay) * 100)}%` }}

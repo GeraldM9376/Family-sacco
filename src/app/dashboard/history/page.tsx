@@ -16,25 +16,25 @@ export default async function HistoryPage() {
     },
   });
 
-  if (!user) return null;
+  if (!user) return <p className="text-white p-8">Loading…</p>;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto bg-slate-950 min-h-screen p-4 md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-white">Payment History</h1>
           <p className="text-slate-400 mt-1">A full record of all your contributions and loan repayments.</p>
         </div>
-        <Link href="/dashboard" className="rounded-xl bg-slate-800 px-6 py-2.5 font-semibold text-white shadow-sm border border-slate-700 hover:bg-slate-700">
+        <Link href="/dashboard" className="rounded-xl bg-slate-800 px-6 py-2.5 font-semibold text-white shadow-sm border border-slate-700 hover:bg-slate-700 transition">
           Back to Dashboard
         </Link>
       </div>
 
-      <div className="rounded-3xl bg-slate-800 shadow-lg border border-slate-700 overflow-hidden">
+      <div className="rounded-3xl bg-slate-900 shadow-lg border border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-900 border-b border-slate-700 text-sm font-semibold text-slate-300">
+              <tr className="bg-slate-800 border-b border-slate-700 text-sm font-semibold text-slate-300">
                 <th className="p-4">Date Paid</th>
                 <th className="p-4">Payment Type</th>
                 <th className="p-4">Amount</th>
@@ -42,7 +42,7 @@ export default async function HistoryPage() {
                 <th className="p-4">Reason (If Rejected)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700">
+            <tbody className="divide-y divide-slate-800">
               {user.payments.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-400">
@@ -55,7 +55,7 @@ export default async function HistoryPage() {
                   try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-700/50 transition">
+                    <tr key={p.id} className="hover:bg-slate-800/50 transition">
                       <td className="p-4 text-slate-300">
                         {fmtDate(p.paidOn)}
                       </td>

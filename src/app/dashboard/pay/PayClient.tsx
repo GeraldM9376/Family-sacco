@@ -57,39 +57,39 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 bg-slate-950 min-h-screen p-4 md:p-8">
       <div className="text-center">
         <h1 className="text-3xl font-extrabold text-white">Make a Payment</h1>
         <p className="text-slate-400 mt-1">Select what you are paying for and calculate your total.</p>
       </div>
 
       {!showOptions && (
-        <div className="rounded-3xl bg-slate-800 p-8 shadow-lg border border-slate-700 space-y-4">
-          <div className="flex justify-between items-center bg-indigo-500/10 p-4 rounded-xl border border-indigo-500/20">
+        <div className="rounded-3xl bg-slate-900 p-8 shadow-lg border border-slate-800 space-y-4">
+          <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
             <div>
-              <p className="font-bold text-indigo-300">Monthly Savings</p>
-              <p className="text-xs text-indigo-400">Min: KES 350</p>
+              <p className="font-bold text-white">Monthly Savings</p>
+              <p className="text-xs text-slate-400">Min: KES 350</p>
             </div>
             <input type="number" min="0" step="1" placeholder="0" value={amounts.savings} onChange={(e) => handleAmountChange("savings", e.target.value)}
-              className="w-32 rounded-lg border-2 border-indigo-500/30 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-400" />
+              className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
           </div>
 
-          <div className={`flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700 ${user.normalDebt <= 0 ? 'opacity-50' : ''}`}>
+          <div className={`flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 ${user.normalDebt <= 0 ? 'opacity-50' : ''}`}>
             <div>
               <p className="font-bold text-white">Normal Loan Repayment</p>
               <p className="text-xs text-red-400">Outstanding: KES {user.normalDebt}</p>
             </div>
             <input type="number" min="0" step="1" disabled={user.normalDebt <= 0} placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
-              className="w-32 rounded-lg border-2 border-slate-700 bg-slate-800 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800/50" />
+              className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
           </div>
 
-          <div className={`flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700 ${user.emergencyDebt <= 0 ? 'opacity-50' : ''}`}>
+          <div className={`flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 ${user.emergencyDebt <= 0 ? 'opacity-50' : ''}`}>
             <div>
               <p className="font-bold text-white">Emergency Loan Repayment</p>
               <p className="text-xs text-red-400">Outstanding: KES {user.emergencyDebt}</p>
             </div>
             <input type="number" min="0" step="1" disabled={user.emergencyDebt <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
-              className="w-32 rounded-lg border-2 border-slate-700 bg-slate-800 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800/50" />
+              className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
           </div>
 
           {err && <p className="text-red-400 text-sm font-bold text-center bg-red-500/10 p-2 rounded border border-red-500/20">{err}</p>}
@@ -101,7 +101,7 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
       )}
 
       {showOptions && (
-        <div className="rounded-3xl bg-slate-800 p-8 shadow-lg border border-slate-700">
+        <div className="rounded-3xl bg-slate-900 p-8 shadow-lg border border-slate-800">
           <div className="mb-6 rounded-xl bg-emerald-500/10 p-6 text-center border border-emerald-500/20">
             <p className="text-emerald-400 font-medium">Total Amount to Pay</p>
             <p className="text-4xl font-extrabold text-emerald-300 mt-1">KES {total}</p>
@@ -124,28 +124,28 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
 
           {method && (
             <form onSubmit={handleSubmit} className="space-y-4 border-t border-slate-700 pt-6">
-              <div className="bg-indigo-500/10 p-4 rounded-xl mb-4 text-sm border border-indigo-500/20">
+              <div className="bg-slate-800 p-4 rounded-xl mb-4 text-sm border border-slate-700">
                 {method === "self" ? (
                   <>
-                    <p className="font-bold text-indigo-300 mb-2">Bank/Paybill Details</p>
+                    <p className="font-bold text-indigo-400 mb-2">Bank/Paybill Details</p>
                     <p className="text-white"><strong>Paybill:</strong> {setting?.paybill || "Not set"}</p>
                     <p className="text-white"><strong>Account:</strong> {setting?.accountNo || "Not set"}</p>
                   </>
                 ) : (
                   <>
-                    <p className="font-bold text-indigo-300 mb-2">Send Money To Admin</p>
+                    <p className="font-bold text-indigo-400 mb-2">Send Money To Admin</p>
                     <p className="text-white"><strong>Phone:</strong> {setting?.sendMoneyTo || "Not set"}</p>
                     <p className="text-white"><strong>Name:</strong> {setting?.adminName || "Not set"}</p>
                   </>
                 )}
-                <p className="text-xs text-indigo-400 mt-2">After sending, fill the form below to submit for approval.</p>
+                <p className="text-xs text-slate-400 mt-2">After sending, fill the form below to submit for approval.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-300 mb-1">Name on Payment</label>
                   <input name="payerName" required defaultValue={user.fullName} readOnly
-                    className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-slate-400 font-semibold outline-none uppercase" />
+                    className="w-full rounded-xl border-2 border-slate-700 bg-slate-800 px-4 py-3 text-slate-400 font-semibold outline-none uppercase" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-300 mb-1">Date Paid</label>
@@ -157,7 +157,7 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
               <div>
                 <label className="block text-sm font-bold text-slate-300 mb-1">Your ID Number</label>
                 <input required defaultValue={user.idNumber} readOnly
-                  className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-slate-400 font-semibold outline-none" />
+                  className="w-full rounded-xl border-2 border-slate-700 bg-slate-800 px-4 py-3 text-slate-400 font-semibold outline-none" />
               </div>
 
               {err && <p className="text-red-400 text-sm font-bold bg-red-500/10 p-3 rounded border border-red-500/20">{err}</p>}
