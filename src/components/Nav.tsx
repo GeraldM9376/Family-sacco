@@ -50,11 +50,12 @@ export function Nav() {
               {navLink("/admin/payments/new", "Record Payment")}
               {navLink("/admin/settings", "Settings")}
             </>
-          ) : (
+                    ) : (
             <>
               {navLink("/dashboard", "Overview")}
               {navLink("/dashboard/pay", "Make Payment")}
               {navLink("/dashboard/loans", "My Loans")}
+              {navLink("/dashboard/history", "History")}
             </>
           )}
         </div>
