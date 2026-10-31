@@ -16,18 +16,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "You must type DELETE to confirm." }, { status: 400 });
     }
 
-    const user = await prisma.user.findFirst({
-      where: { idNumber, phone }
+    // 1. Check if user exists by ID
+    const userById = await prisma.user.findUnique({
+      where: { idNumber }
     });
 
-    if (!user) {
-      return NextResponse.json({ error: "User ID and Phone number do not match our records." }, { status: 404 });
+    if (!userById) {
+      return NextResponse.json({ error: "Invalid User ID. No account found with this ID." }, { status: 404 });
     }
 
-    await prisma.user.delete({ where: { id: user.id } });
+    // 2. Check if phone number matches
+    if (userById.phone !== phone) {
+      return NextResponse.json({ error: "The phone number does not match our records for this ID." }, { status: 400 });
+    }
+
+    // 3. Delete user
+    await prisma.user.delete({ where: { id: userById.id } });
     
     return NextResponse.json({ ok: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to delete user." }, { status: 500 });
+    return NextResponse.json({ error: "An unexpected error occurred. Please try again." }, { status: 500 });
   }
 }
