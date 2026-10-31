@@ -6,12 +6,13 @@ import { connection } from "next/server";
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; msg?: string }>; // Added msg
 }) {
   await connection();
 
   const resolvedParams = await searchParams;
   const q = resolvedParams.q || "";
+  const msg = resolvedParams.msg;
 
   const users = await prisma.user.findMany({
     where: q
@@ -28,6 +29,13 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
+      {/* Show success message if redirected from delete page */}
+      {msg && (
+        <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-200 font-bold">
+          {msg}
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900">Manage Users</h1>
