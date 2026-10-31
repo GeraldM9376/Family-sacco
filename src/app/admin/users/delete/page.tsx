@@ -44,7 +44,7 @@ export default function DeleteUserPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-3xl bg-slate-800 p-8 shadow-lg border border-red-900/30 mt-10">
+    <div className="mx-auto max-w-md rounded-3xl bg-slate-900 p-8 shadow-lg border border-red-900/30 mt-10">
       <h1 className="mb-2 text-2xl font-bold text-red-500">Delete User</h1>
       <p className="mb-6 text-sm text-slate-400">This action is permanent and will delete all their loans and payments.</p>
 
@@ -52,19 +52,19 @@ export default function DeleteUserPage() {
         <div>
           <label className="mb-1 block text-sm font-bold text-slate-300">User ID Number</label>
           <input name="idNumber" required placeholder="e.g. 12345678"
-            className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-red-500" />
+            className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-red-500" />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-bold text-slate-300">Phone Number</label>
           <input name="phone" required value={phone} onChange={handlePhoneChange} placeholder="+254712345678"
-            className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-red-500" />
+            className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-red-500" />
         </div>
 
         <div className="pt-4 border-t border-slate-700">
           <label className="mb-1 block text-sm font-bold text-slate-300">Type <strong>DELETE</strong> to confirm</label>
           <input name="confirmation" required placeholder="DELETE"
-            className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-red-500 uppercase" />
+            className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-red-500 uppercase" />
         </div>
 
         {err && <p className="text-red-400 text-sm font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{err}</p>}

@@ -28,7 +28,7 @@ export default async function AdminUsersPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-slate-950 min-h-screen p-4 md:p-8">
       {msg && (
         <div className="bg-emerald-500/20 text-emerald-400 p-4 rounded-xl border border-emerald-500/30 font-bold">
           {msg}
@@ -51,7 +51,7 @@ export default async function AdminUsersPage({
               name="q"
               defaultValue={q}
               placeholder="Search by Name, ID or Phone..."
-              className="w-full rounded-xl border-2 border-slate-700 bg-slate-800 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
             />
             <button className="rounded-xl bg-indigo-600 px-6 font-bold text-white hover:bg-indigo-500 transition">
               Search
@@ -60,11 +60,11 @@ export default async function AdminUsersPage({
         </div>
       </div>
 
-      <div className="rounded-3xl bg-slate-800 shadow-lg border border-slate-700 overflow-hidden">
+      <div className="rounded-3xl bg-slate-900 shadow-lg border border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-900 border-b border-slate-700 text-sm font-semibold text-slate-300">
+              <tr className="bg-slate-800 border-b border-slate-700 text-sm font-semibold text-slate-300">
                 <th className="p-4">Name</th>
                 <th className="p-4">ID Number</th>
                 <th className="p-4">Phone</th>
@@ -74,7 +74,7 @@ export default async function AdminUsersPage({
                 <th className="p-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700">
+            <tbody className="divide-y divide-slate-800">
               {users.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-slate-400">
@@ -83,7 +83,7 @@ export default async function AdminUsersPage({
                 </tr>
               ) : (
                 users.map((user: any) => (
-                  <tr key={user.id} className="hover:bg-slate-700/50 transition">
+                  <tr key={user.id} className="hover:bg-slate-800/50 transition">
                     <td className="p-4 font-bold text-white">{user.fullName}</td>
                     <td className="p-4 font-mono text-slate-300">{user.idNumber}</td>
                     <td className="p-4 text-slate-300">{user.phone}</td>

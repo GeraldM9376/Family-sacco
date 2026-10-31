@@ -34,19 +34,19 @@ export default function NewLoanPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl rounded-3xl bg-slate-800 p-8 shadow-lg border border-slate-700 mt-10">
+    <div className="mx-auto max-w-2xl rounded-3xl bg-slate-900 p-8 shadow-lg border border-slate-800 mt-10">
       <h1 className="mb-6 text-2xl font-bold text-white">Issue New Loan</h1>
       
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="mb-1 block text-sm font-bold text-slate-300">User ID Number</label>
           <input name="idNumber" required placeholder="e.g. 12345678"
-            className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+            className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-bold text-slate-300">Loan Type</label>
-          <select name="type" className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-indigo-500">
+          <select name="type" className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
             <option value="normal">Normal Loan</option>
             <option value="emergency">Emergency Loan</option>
           </select>
@@ -56,12 +56,12 @@ export default function NewLoanPage() {
           <div>
             <label className="mb-1 block text-sm font-bold text-slate-300">Amount Issued (Principal)</label>
             <input name="principal" type="number" min="1" required placeholder="e.g. 5000"
-              className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+              className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-bold text-slate-300">Amount to Pay (With Interest)</label>
             <input name="amountToPay" type="number" min="1" required placeholder="e.g. 5500"
-              className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+              className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
         </div>
 
@@ -69,12 +69,12 @@ export default function NewLoanPage() {
           <div>
             <label className="mb-1 block text-sm font-bold text-slate-300">Date Issued</label>
             <input name="issuedOn" type="date" required
-              className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+              className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-bold text-slate-300">Due Date</label>
             <input name="dueDate" type="date" required
-              className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+              className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
         </div>
 
