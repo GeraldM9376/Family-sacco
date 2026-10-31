@@ -7,6 +7,18 @@ export default function DeleteUserPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [phone, setPhone] = useState("+254");
+
+  // Auto-format phone number to match the database (+254...)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
+    if (val.startsWith("0")) val = val.substring(1); // Remove leading 0
+    if (val.startsWith("254")) val = val.substring(3); // Remove 254 if they type it
+    // Limit to 9 digits (7XXXXXXXX or 1XXXXXXXX)
+    if (val.length > 9) val = val.substring(0, 9);
+    
+    setPhone("+254" + val);
+  };
 
   async function handleDelete(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -14,29 +26,29 @@ export default function DeleteUserPage() {
     setErr("");
 
     const fd = new FormData(e.currentTarget);
-    const body = Object.fromEntries(fd.entries());
+    fd.set("phone", phone); // Ensure the formatted phone is sent
 
     try {
       const res = await fetch("/api/admin/delete-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(Object.fromEntries(fd.entries())),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         setErr(data.error || "Failed to delete user.");
-        setLoading(false);
+        setLoading(false); // Stop loading on error
         return;
       }
 
-      // Success!
+      // Success! Redirect to users list
       router.push("/admin/users?msg=User deleted successfully");
       router.refresh();
     } catch (error: any) {
       setErr("Something went wrong. Please try again.");
-      setLoading(false);
+      setLoading(false); // Stop loading on exception
     }
   }
 
@@ -49,19 +61,25 @@ export default function DeleteUserPage() {
         <div>
           <label className="mb-1 block text-sm font-bold text-gray-700">User ID Number</label>
           <input name="idNumber" required placeholder="e.g. 12345678"
-            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-red-500" />
+            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-red-500" />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-bold text-gray-700">Phone Number</label>
-          <input name="phone" required placeholder="+254712345678"
-            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-red-500" />
+          <input 
+            name="phone" 
+            required 
+            value={phone}
+            onChange={handlePhoneChange}
+            placeholder="+254712345678"
+            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-red-500" 
+          />
         </div>
 
         <div className="pt-4 border-t border-gray-200">
           <label className="mb-1 block text-sm font-bold text-gray-700">Type <strong>DELETE</strong> to confirm</label>
           <input name="confirmation" required placeholder="DELETE"
-            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-red-500 uppercase" />
+            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-red-500 uppercase" />
         </div>
 
         {err && <p className="text-red-500 text-sm font-bold bg-red-50 p-2 rounded">{err}</p>}
