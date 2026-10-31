@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
-import { SubmitButton } from "@/components/SubmitButton";
 
 export default function NewLoanPage() {
+  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setLoading(true);
     setErr("");
 
     const fd = new FormData(e.currentTarget);
@@ -22,11 +23,13 @@ export default function NewLoanPage() {
       const data = await res.json();
       if (!res.ok) {
         setErr(data.error || "Failed to issue loan.");
+        setLoading(false);
         return;
       }
       window.location.href = "/admin?msg=Loan issued successfully";
     } catch (error: any) {
       setErr("Something went wrong. Please try again.");
+      setLoading(false);
     }
   }
 
@@ -77,9 +80,10 @@ export default function NewLoanPage() {
 
         {err && <p className="text-red-500 text-sm font-bold bg-red-50 p-2 rounded">{err}</p>}
 
-        <SubmitButton className="w-full rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-gray-800 transition">
-          Issue Loan
-        </SubmitButton>
+        <button type="submit" disabled={loading}
+          className="w-full rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-gray-800 transition disabled:opacity-50 flex justify-center items-center gap-2">
+          {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : "Issue Loan"}
+        </button>
       </form>
     </div>
   );

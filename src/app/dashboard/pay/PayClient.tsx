@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { submitBulkPayment } from "./actions";
 import { useRouter } from "next/navigation";
-import { SubmitButton } from "@/components/SubmitButton";
 
 export default function PayClient({ user, setting }: { user: any, setting: any }) {
   const router = useRouter();
@@ -163,9 +162,10 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
 
               {err && <p className="text-red-500 text-sm font-bold">{err}</p>}
 
-              <SubmitButton className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 font-bold text-white shadow-lg transition hover:scale-[1.02]">
-                Submit for Admin Approval
-              </SubmitButton>
+              <button type="submit" disabled={loading}
+                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 font-bold text-white shadow-lg transition hover:scale-[1.02] disabled:opacity-50 flex justify-center items-center gap-2">
+                {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : "Submit for Admin Approval"}
+              </button>
             </form>
           )}
         </div>
