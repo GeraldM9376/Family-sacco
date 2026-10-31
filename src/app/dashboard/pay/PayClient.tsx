@@ -87,7 +87,7 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
               placeholder="0" 
               value={amounts.savings} 
               onChange={(e) => handleAmountChange("savings", e.target.value)}
-              className="w-32 rounded-lg border-2 border-indigo-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500" 
+              className="w-32 rounded-lg border-2 border-indigo-200 px-3 py-2 text-black font-semibold text-right outline-none focus:border-indigo-500" 
             />
           </div>
 
@@ -104,7 +104,7 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
               placeholder="0" 
               value={amounts.normal} 
               onChange={(e) => handleAmountChange("normal", e.target.value)}
-              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500 disabled:bg-gray-200" 
+              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-black font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-gray-200" 
             />
           </div>
 
@@ -121,7 +121,7 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
               placeholder="0" 
               value={amounts.emergency} 
               onChange={(e) => handleAmountChange("emergency", e.target.value)}
-              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-right font-bold outline-none focus:border-indigo-500 disabled:bg-gray-200" 
+              className="w-32 rounded-lg border-2 border-gray-200 px-3 py-2 text-black font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-gray-200" 
             />
           </div>
 
@@ -178,19 +178,19 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Name on Payment</label>
                   <input name="payerName" required defaultValue={user.fullName} readOnly
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 outline-none uppercase" />
+                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 text-black font-semibold outline-none uppercase" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Date Paid</label>
                   <input name="paidOn" type="date" required
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-indigo-500" />
+                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none focus:border-indigo-500" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Your ID Number</label>
                 <input required defaultValue={user.idNumber} readOnly
-                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 outline-none" />
+                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 text-black font-semibold outline-none" />
               </div>
 
               {err && <p className="text-red-500 text-sm font-bold">{err}</p>}

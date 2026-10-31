@@ -102,7 +102,7 @@ export default function SignupPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">Full Name (Caps)</label>
             <div className="relative">
               <input name="fullName" value={form.fullName} onChange={handleChange} placeholder="JOHN DOE" required
-                className={`w-full rounded-xl border-2 px-4 py-3 outline-none transition-all focus:border-indigo-500 ${form.fullName ? (isValidName ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
+                className={`w-full rounded-xl border-2 px-4 py-3 text-black font-semibold outline-none transition-all focus:border-indigo-500 ${form.fullName ? (isValidName ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
               <InputStatus isValid={isValidName} value={form.fullName} />
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function SignupPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">Email Address</label>
             <div className="relative">
               <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="john@gmail.com" required
-                className={`w-full rounded-xl border-2 px-4 py-3 outline-none transition-all focus:border-indigo-500 ${form.email ? (isValidEmail ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
+                className={`w-full rounded-xl border-2 px-4 py-3 text-black font-semibold outline-none transition-all focus:border-indigo-500 ${form.email ? (isValidEmail ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
               <InputStatus isValid={isValidEmail} value={form.email} />
             </div>
           </div>
@@ -120,13 +120,13 @@ export default function SignupPage() {
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">ID Number</label>
               <input name="idNumber" value={form.idNumber} onChange={handleChange} placeholder="12345678" required
-                className={`w-full rounded-xl border-2 px-4 py-3 outline-none transition-all focus:border-indigo-500 ${form.idNumber ? (isValidId ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
+                className={`w-full rounded-xl border-2 px-4 py-3 text-black font-semibold outline-none transition-all focus:border-indigo-500 ${form.idNumber ? (isValidId ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Phone Number</label>
               <div className="relative">
                 <input name="phone" value={form.phone} onChange={handleChange} placeholder="+254712345678" required
-                  className={`w-full rounded-xl border-2 px-4 py-3 outline-none transition-all focus:border-indigo-500 ${form.phone ? (isValidPhone ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
+                  className={`w-full rounded-xl border-2 px-4 py-3 text-black font-semibold outline-none transition-all focus:border-indigo-500 ${form.phone ? (isValidPhone ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
                 <InputStatus isValid={isValidPhone} value={form.phone} />
               </div>
             </div>
@@ -136,7 +136,7 @@ export default function SignupPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
             <div className="relative">
               <input name="password" type={showPass ? "text" : "password"} value={form.password} onChange={handleChange} placeholder="••••••••" required
-                className={`w-full rounded-xl border-2 px-4 py-3 pr-12 outline-none transition-all focus:border-indigo-500 ${form.password ? (isValidPass ? 'border-emerald-500' : 'border-amber-300') : 'border-gray-200'}`} />
+                className={`w-full rounded-xl border-2 px-4 py-3 text-black font-semibold pr-12 outline-none transition-all focus:border-indigo-500 ${form.password ? (isValidPass ? 'border-emerald-500' : 'border-amber-300') : 'border-gray-200'}`} />
               <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-700">
                 {showPass ? "🙈" : "👁️"}
               </button>
@@ -154,7 +154,7 @@ export default function SignupPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">Confirm Password</label>
             <div className="relative">
               <input name="confirm" type={showConfirm ? "text" : "password"} value={form.confirm} onChange={handleChange} placeholder="••••••••" required
-                className={`w-full rounded-xl border-2 px-4 py-3 pr-12 outline-none transition-all focus:border-indigo-500 ${form.confirm ? (doPasswordsMatch ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
+                className={`w-full rounded-xl border-2 px-4 py-3 text-black font-semibold pr-12 outline-none transition-all focus:border-indigo-500 ${form.confirm ? (doPasswordsMatch ? 'border-emerald-500' : 'border-red-300') : 'border-gray-200'}`} />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-700">
                 {showConfirm ? "🙈" : "👁️"}
               </button>

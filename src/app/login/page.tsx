@@ -44,8 +44,8 @@ export default function LoginPage() {
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
             <label className="mb-1 block text-sm font-bold text-gray-700">ID Number</label>
-            <input name="idNumber" placeholder="Enter your ID or insignadmin" required
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-indigo-500" />
+            <input name="idNumber" placeholder="Enter your ID  " required
+              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold outline-none transition-all focus:border-indigo-500" />
           </div>
 
           <div>
@@ -55,7 +55,7 @@ export default function LoginPage() {
             </div>
             <div className="relative">
               <input name="password" type={showPass ? "text" : "password"} placeholder="••••••••" required
-                className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 pr-12 outline-none transition-all focus:border-indigo-500" />
+                className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-black font-semibold pr-12 outline-none transition-all focus:border-indigo-500" />
               <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-700">
                 {showPass ? "🙈" : "👁️"}
               </button>
