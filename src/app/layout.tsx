@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a", // Dark theme color
+  themeColor: "#020617", // Very dark slate/black
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" style={{ colorScheme: "dark" }}>
-      <body className="min-h-screen bg-slate-900 text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
+      <body className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
         <Providers>
           <Suspense fallback={<div className="p-6 text-center text-slate-400">Loading...</div>}>
             <Nav />

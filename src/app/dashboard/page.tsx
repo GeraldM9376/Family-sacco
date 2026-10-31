@@ -73,7 +73,7 @@ export default async function Dashboard() {
   }
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 bg-slate-950 min-h-screen p-4 md:p-8">
       
       {/* Personalized Header with Clear Details */}
       <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-6">
