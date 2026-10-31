@@ -48,8 +48,14 @@ export default async function AdminDashboard({
   users.forEach((user: any) => {
     let monthlySavings = 0;
     user.payments.forEach((p: any) => {
-      const breakdown = JSON.parse(p.breakdown || "{}");
-      if (breakdown.savings) monthlySavings += breakdown.savings;
+      try {
+        const breakdown = typeof p.breakdown === 'string' ? JSON.parse(p.breakdown) : p.breakdown;
+        if (breakdown && breakdown.savings) {
+          monthlySavings += Number(breakdown.savings);
+        }
+      } catch (e) {
+        console.error("Parse error", p.breakdown);
+      }
     });
 
     totalMonthlyContribution += monthlySavings;
@@ -119,7 +125,9 @@ export default async function AdminDashboard({
         ) : (
           <div className="space-y-4">
             {pendingPayments.map((p: any) => {
-              const breakdown = JSON.parse(p.breakdown || "{}");
+              let breakdown: any = {};
+              try { breakdown = typeof p.breakdown === 'string' ? JSON.parse(p.breakdown) : p.breakdown; } catch (e) {}
+              
               return (
                 <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-gray-200 p-5 bg-gray-50">
                   <div>
@@ -133,9 +141,9 @@ export default async function AdminDashboard({
                       <span className="font-medium text-gray-900">{p.user.fullName}</span> (ID: {p.user.idNumber})
                     </p>
                     <div className="text-xs text-gray-500 mt-2 flex gap-3">
-                      {breakdown.savings > 0 && <span>Savings: {fmt(breakdown.savings)}</span>}
-                      {breakdown.normal > 0 && <span>Normal: {fmt(breakdown.normal)}</span>}
-                      {breakdown.emergency > 0 && <span>Emergency: {fmt(breakdown.emergency)}</span>}
+                      {breakdown?.savings > 0 && <span>Savings: {fmt(breakdown.savings)}</span>}
+                      {breakdown?.normal > 0 && <span>Normal: {fmt(breakdown.normal)}</span>}
+                      {breakdown?.emergency > 0 && <span>Emergency: {fmt(breakdown.emergency)}</span>}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">Paid on {fmtDate(p.paidOn)} by {p.payerName}</p>
                   </div>
