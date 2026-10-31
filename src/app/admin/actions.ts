@@ -11,7 +11,8 @@ export async function approvePayment(paymentId: string) {
   if (!payment || payment.status !== "pending") return;
 
   const { userId } = payment;
-  const breakdown = JSON.parse(payment.breakdown || "{}");
+  let breakdown: any = {};
+  try { breakdown = JSON.parse(payment.breakdown || "{}"); } catch (e) {}
 
   await prisma.$transaction(async (tx: any) => {
     await tx.payment.update({
@@ -22,24 +23,24 @@ export async function approvePayment(paymentId: string) {
     if (breakdown.savings > 0) {
       await tx.user.update({
         where: { id: userId },
-        data: { savingsTotal: { increment: breakdown.savings } },
+        data: { savingsTotal: { increment: Number(breakdown.savings) } },
       });
     }
     if (breakdown.normal > 0) {
-      const newDebt = Math.max(0, payment.user.normalDebt - breakdown.normal);
+      const newDebt = Math.max(0, payment.user.normalDebt - Number(breakdown.normal));
       await tx.user.update({
         where: { id: userId },
         data: { normalDebt: newDebt },
       });
-      await distributeLoanPayment(tx, userId, "normal", breakdown.normal);
+      await distributeLoanPayment(tx, userId, "normal", Number(breakdown.normal));
     }
     if (breakdown.emergency > 0) {
-      const newDebt = Math.max(0, payment.user.emergencyDebt - breakdown.emergency);
+      const newDebt = Math.max(0, payment.user.emergencyDebt - Number(breakdown.emergency));
       await tx.user.update({
         where: { id: userId },
         data: { emergencyDebt: newDebt },
       });
-      await distributeLoanPayment(tx, userId, "emergency", breakdown.emergency);
+      await distributeLoanPayment(tx, userId, "emergency", Number(breakdown.emergency));
     }
   });
 
@@ -140,7 +141,6 @@ export async function adminRecordPayment(formData: FormData) {
   if (type === "emergency" && amount > user.emergencyDebt) throw new Error("Cannot pay more than the emergency loan debt.");
 
   await prisma.$transaction(async (tx: any) => {
-    // Create as a bulk payment for consistency
     const breakdown = JSON.stringify({ [type]: amount });
     
     await tx.payment.create({
@@ -181,27 +181,6 @@ export async function adminRecordPayment(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/users");
   revalidatePath("/dashboard");
-}
-
-export async function deleteUser(formData: FormData) {
-  const idNumber = formData.get("idNumber") as string;
-  const phone = formData.get("phone") as string;
-  const confirmation = formData.get("confirmation") as string;
-
-  if (confirmation !== "DELETE") {
-    throw new Error("You must type DELETE to confirm.");
-  }
-
-  const user = await prisma.user.findFirst({
-    where: { idNumber, phone }
-  });
-
-  if (!user) {
-    throw new Error("User ID and Phone number do not match our records.");
-  }
-
-  await prisma.user.delete({ where: { id: user.id } });
-  revalidatePath("/admin/users");
 }
 
 async function distributeLoanPayment(tx: any, userId: string, type: string, amountPaid: number) {

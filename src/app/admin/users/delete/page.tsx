@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { deleteUser } from "../../actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -15,13 +14,28 @@ export default function DeleteUserPage() {
     setErr("");
 
     const fd = new FormData(e.currentTarget);
+    const body = Object.fromEntries(fd.entries());
 
     try {
-      await deleteUser(fd);
+      const res = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErr(data.error || "Failed to delete user.");
+        setLoading(false);
+        return;
+      }
+
+      // Success!
       router.push("/admin/users?msg=User deleted successfully");
       router.refresh();
     } catch (error: any) {
-      setErr(error.message || "Failed to delete user.");
+      setErr("Something went wrong. Please try again.");
       setLoading(false);
     }
   }
@@ -50,7 +64,7 @@ export default function DeleteUserPage() {
             className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none focus:border-red-500 uppercase" />
         </div>
 
-        {err && <p className="text-red-500 text-sm font-bold">{err}</p>}
+        {err && <p className="text-red-500 text-sm font-bold bg-red-50 p-2 rounded">{err}</p>}
 
         <button type="submit" disabled={loading}
           className="w-full rounded-xl bg-red-600 py-3 font-bold text-white hover:bg-red-700 transition disabled:opacity-50 flex justify-center items-center gap-2">
