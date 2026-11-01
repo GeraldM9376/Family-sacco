@@ -20,7 +20,13 @@ export default async function Dashboard() {
 
   if (!user) return <p className="text-white p-8">Loading…</p>;
 
+  // Get current UTC time
   const now = new Date();
+  
+  // Force to East Africa Time (UTC+3)
+  const eatTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));
+  const eatHour = eatTime.getUTCHours();
+  
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
@@ -53,8 +59,8 @@ export default async function Dashboard() {
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const currentMonthName = months[now.getMonth()];
 
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  // Use EAT hour for accurate greeting
+  const greeting = eatHour < 12 ? "Good morning" : eatHour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user.fullName.split(" ")[0];
 
   const hasActiveLoans = user.loans.length > 0;
@@ -112,7 +118,7 @@ export default async function Dashboard() {
 
       {/* Status Banner */}
       <div className={`rounded-xl border p-4 flex items-center gap-4 ${statusColor}`}>
-        <div className="text-2xl">{totalDebt === 0 ? "🏆" : "🎯"}</div>
+        <div className="text-2xl">{!hasActiveLoans ? "🏆" : "🎯"}</div>
         <p className="font-medium">{statusMessage}</p>
       </div>
 
