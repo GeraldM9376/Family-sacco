@@ -9,25 +9,36 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
 
   const resolvedParams = await params;
   
+  // Fetch user with accounts (no nested include on loans/payments)
   const user = await prisma.user.findUnique({
     where: { id: resolvedParams.id },
     include: {
       accounts: true,
-      payments: { orderBy: { createdAt: "desc" }, include: { account: true } },
-      loans: { orderBy: { issuedOn: "desc" }, include: { account: true } },
+      payments: { orderBy: { createdAt: "desc" } },
+      loans: { orderBy: { issuedOn: "desc" } },
     },
   });
 
   if (!user) return notFound();
 
-  const accountStats = (user as any).accounts.map((acc: any) => {
-    const accLoans = (user as any).loans.filter((l: any) => l.accountId === acc.id && l.status === "unpaid");
+  // Manually fetch all accounts for lookup
+  const allAccounts = await prisma.account.findMany({
+    where: { userId: user.id },
+  });
+
+  const getAccountName = (accountId: string) => {
+    const acc = allAccounts.find((a) => a.id === accountId);
+    return acc ? acc.name : "Unknown Account";
+  };
+
+  const accountStats = user.accounts.map((acc) => {
+    const accLoans = user.loans.filter((l) => l.accountId === acc.id && l.status === "unpaid");
     const normalDebt = accLoans
-      .filter((l: any) => l.type === "normal")
-      .reduce((sum: number, l: any) => sum + (l.amountToPay - l.paidAmount), 0);
+      .filter((l) => l.type === "normal")
+      .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
     const emergencyDebt = accLoans
-      .filter((l: any) => l.type === "emergency")
-      .reduce((sum: number, l: any) => sum + (l.amountToPay - l.paidAmount), 0);
+      .filter((l) => l.type === "emergency")
+      .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
     return { ...acc, normalDebt, emergencyDebt };
   });
 
@@ -38,19 +49,19 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
       </Link>
       
       <div className="rounded-3xl bg-slate-900 p-8 text-white shadow-xl border border-slate-800">
-        <h1 className="text-3xl font-bold">{(user as any).fullName}</h1>
+        <h1 className="text-3xl font-bold">{user.fullName}</h1>
         <div className="mt-4 flex flex-wrap gap-6 text-sm text-slate-300">
-          <p><strong className="text-white">ID:</strong> {(user as any).idNumber}</p>
-          <p><strong className="text-white">Phone:</strong> {(user as any).phone}</p>
-          <p><strong className="text-white">Email:</strong> {(user as any).email}</p>
-          <p><strong className="text-white">Joined:</strong> {fmtDate((user as any).createdAt)}</p>
+          <p><strong className="text-white">ID:</strong> {user.idNumber}</p>
+          <p><strong className="text-white">Phone:</strong> {user.phone}</p>
+          <p><strong className="text-white">Email:</strong> {user.email}</p>
+          <p><strong className="text-white">Joined:</strong> {fmtDate(user.createdAt)}</p>
         </div>
       </div>
 
       <div>
         <h2 className="text-xl font-bold text-white mb-4">Accounts</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {accountStats.map((acc: any) => (
+          {accountStats.map((acc) => (
             <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
               <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{acc.name}</p>
               <p className="text-2xl font-bold text-emerald-400 mt-1">{fmt(acc.balance)}</p>
@@ -77,10 +88,10 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         <div className="rounded-2xl bg-slate-900 shadow-sm border border-slate-800 p-6">
           <h2 className="text-lg font-bold text-white mb-4">Loan History</h2>
           <div className="space-y-4">
-            {(user as any).loans.length === 0 ? (
+            {user.loans.length === 0 ? (
               <p className="text-sm text-slate-400">No loans taken.</p>
             ) : (
-              (user as any).loans.map((loan: any) => (
+              user.loans.map((loan) => (
                 <div key={loan.id} className="rounded-xl border border-slate-700 bg-slate-800 p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-bold capitalize text-white">{loan.type} Loan</span>
@@ -90,7 +101,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                       {loan.status.toUpperCase()}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mb-2">Account: {loan.account?.name}</p>
+                  <p className="text-xs text-slate-400 mb-2">Account: {getAccountName(loan.accountId)}</p>
                   <div className="text-sm text-slate-300 grid grid-cols-2 gap-2">
                     <p>Issued: <span className="font-medium text-white">{fmtDate(loan.issuedOn)}</span></p>
                     <p>Due: <span className="font-medium text-white">{fmtDate(loan.dueDate)}</span></p>
@@ -108,17 +119,17 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         <div className="rounded-2xl bg-slate-900 shadow-sm border border-slate-800 p-6">
           <h2 className="text-lg font-bold text-white mb-4">Payment History</h2>
           <div className="space-y-3">
-            {(user as any).payments.length === 0 ? (
+            {user.payments.length === 0 ? (
               <p className="text-sm text-slate-400">No payments recorded.</p>
             ) : (
-              (user as any).payments.map((p: any) => {
+              user.payments.map((p) => {
                 let breakdown: any = {};
                 try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
                 return (
                   <div key={p.id} className="flex justify-between items-center rounded-xl bg-slate-800 p-3 border border-slate-700">
                     <div>
                       <p className="font-bold text-white">Total: {fmt(p.totalAmount)}</p>
-                      <p className="text-xs text-slate-400">{p.account?.name} • {fmtDate(p.paidOn)}</p>
+                      <p className="text-xs text-slate-400">{getAccountName(p.accountId)} • {fmtDate(p.paidOn)}</p>
                       <p className="text-xs text-slate-400 mt-1">
                         {breakdown.savings > 0 && `Savings: ${fmt(breakdown.savings)} `}
                         {breakdown.normal > 0 && `| Normal: ${fmt(breakdown.normal)} `}
