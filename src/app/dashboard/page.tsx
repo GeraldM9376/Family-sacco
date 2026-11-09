@@ -19,6 +19,9 @@ export default async function Dashboard() {
     },
   });
 
+  const setting = await prisma.setting.findUnique({ where: { id: 1 } });
+  const adminPhone = setting?.sendMoneyTo || "";
+
   if (!user) return <p className="text-white p-8">Loading…</p>;
 
   const now = new Date();
@@ -26,9 +29,6 @@ export default async function Dashboard() {
   const eatHour = eatTime.getUTCHours();
   const greeting = eatHour < 12 ? "Good morning" : eatHour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user.fullName.split(" ")[0];
-
-  const currentMonthName = now.toLocaleString('default', { month: 'long' });
-  const currentYear = now.getFullYear();
 
   // --- Status Banner Logic ---
   const hasActiveLoans = user.loans.length > 0;
@@ -117,15 +117,48 @@ export default async function Dashboard() {
         <p className="font-medium">{statusMessage}</p>
       </div>
 
-      {/* NEW: Request Loan Banner */}
-      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Request Loan Banner with Call/Text/WhatsApp */}
+      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div>
-          <h3 className="font-bold text-indigo-300">Need a Loan?</h3>
-          <p className="text-sm text-indigo-400/80 mt-1">Loan requests are processed by the Admin. Contact them to apply.</p>
+          <h3 className="font-bold text-indigo-300 text-lg">Need a Loan?</h3>
+          <p className="text-sm text-indigo-400/80 mt-1">
+            {adminPhone ? `Choose how to reach the Admin (${adminPhone})` : "Loan requests are processed by the Admin. Contact them to apply."}
+          </p>
         </div>
-        <span className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-lg">
-          Contact Admin
-        </span>
+        
+        {adminPhone ? (
+          <div className="flex flex-wrap gap-3">
+            {/* Call Button */}
+            <a 
+              href={`tel:${adminPhone}`}
+              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center gap-2"
+            >
+              <span className="text-lg">📞</span> Call
+            </a>
+            
+            {/* SMS Button */}
+            <a 
+              href={`sms:${adminPhone}?body=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`}
+              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center gap-2"
+            >
+              <span className="text-lg">💬</span> Text
+            </a>
+            
+            {/* WhatsApp Button */}
+            <a 
+              href={`https://wa.me/${adminPhone.replace(/\D/g, '')}?text=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-bold shadow hover:bg-emerald-500 transition flex items-center gap-2"
+            >
+              <span className="text-lg">💚</span> WhatsApp
+            </a>
+          </div>
+        ) : (
+          <span className="bg-slate-800 text-slate-400 rounded-lg px-4 py-2 text-sm font-bold border border-slate-700">
+            Admin Phone Not Set
+          </span>
+        )}
       </div>
 
       {/* Account Balances */}
