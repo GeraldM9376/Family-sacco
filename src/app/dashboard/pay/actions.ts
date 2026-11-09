@@ -10,6 +10,7 @@ export async function submitBulkPayment(formData: FormData) {
     if (!s?.user) throw new Error("You must be logged in.");
     const userId = (s.user as any).id;
 
+    const accountId = formData.get("accountId") as string;
     const method = formData.get("method") as string;
     const payerName = (formData.get("payerName") as string).toUpperCase();
     const paidOnStr = formData.get("paidOn") as string;
@@ -19,12 +20,10 @@ export async function submitBulkPayment(formData: FormData) {
     const normalAmt = Number(formData.get("normalAmt")) || 0;
     const emergencyAmt = Number(formData.get("emergencyAmt")) || 0;
 
-    // 1. Basic validation
-    if (!method || !payerName || !paidOnStr || totalAmount <= 0) {
+    if (!accountId || !method || !payerName || !paidOnStr || totalAmount <= 0) {
       throw new Error("Invalid payment details. Please check the form.");
     }
 
-    // 2. Prevent negative numbers on the backend
     if (savingsAmt < 0 || normalAmt < 0 || emergencyAmt < 0) {
       throw new Error("Payment amounts cannot be negative.");
     }
@@ -32,12 +31,27 @@ export async function submitBulkPayment(formData: FormData) {
     const paidOn = new Date(paidOnStr);
     if (isNaN(paidOn.getTime())) throw new Error("Invalid date selected.");
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new Error("User not found.");
+    // Validate the account belongs to this user
+    const account = await prisma.account.findFirst({
+      where: { id: accountId, userId },
+    });
+    if (!account) throw new Error("Account not found.");
 
-    // 3. Prevent overpaying loans
-    if (normalAmt > user.normalDebt) throw new Error("Cannot pay more than your normal loan debt.");
-    if (emergencyAmt > user.emergencyDebt) throw new Error("Cannot pay more than your emergency loan debt.");
+    // Calculate the outstanding debt for THIS account specifically
+    const accountLoans = await prisma.loan.findMany({
+      where: { accountId, userId, status: "unpaid" },
+    });
+
+    const normalDebt = accountLoans
+      .filter(l => l.type === "normal")
+      .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+    
+    const emergencyDebt = accountLoans
+      .filter(l => l.type === "emergency")
+      .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+
+    if (normalAmt > normalDebt) throw new Error("Cannot pay more than your normal loan debt in this account.");
+    if (emergencyAmt > emergencyDebt) throw new Error("Cannot pay more than your emergency loan debt in this account.");
 
     const breakdown = JSON.stringify({
       savings: savingsAmt,
@@ -48,6 +62,7 @@ export async function submitBulkPayment(formData: FormData) {
     await prisma.payment.create({
       data: {
         userId,
+        accountId,
         breakdown,
         totalAmount,
         method,
@@ -63,7 +78,6 @@ export async function submitBulkPayment(formData: FormData) {
     return { success: true };
   } catch (error: any) {
     console.error("PAYMENT ERROR:", error.message);
-    // Throw the error message so the frontend can display it
     throw new Error(error.message || "Failed to submit payment. Try again.");
   }
 }

@@ -21,7 +21,7 @@ export default async function AdminDashboard({
 
   const pendingPayments = await prisma.payment.findMany({
     where: { status: "pending" },
-    include: { user: true },
+    include: { user: true, account: true },
     orderBy: { createdAt: "asc" },
   });
 
@@ -152,6 +152,9 @@ export default async function AdminDashboard({
                         <p className="font-bold text-lg text-white">Total: {fmt(p.totalAmount)}</p>
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700 text-slate-300 uppercase tracking-wider border border-slate-600">
                           {p.method === "admin" ? "Admin Assisted" : "Self Pay"}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 uppercase tracking-wider border border-indigo-500/30">
+                          {p.account?.name || "Account"}
                         </span>
                       </div>
                       <p className="text-sm text-slate-400">

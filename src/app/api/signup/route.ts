@@ -29,9 +29,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email or ID already registered." }, { status: 409 });
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.create({ data: { fullName, email, idNumber, phone, passwordHash } });
   
-  // Send the password they typed to their email
+  // Create the user AND their two accounts automatically
+  await prisma.user.create({ 
+    data: { 
+      fullName, 
+      email, 
+      idNumber, 
+      phone, 
+      passwordHash,
+      accounts: {
+        create: [
+          { name: "Account 1", balance: 0 },
+          { name: "Account 2", balance: 0 }
+        ]
+      }
+    } 
+  });
+  
   await sendWelcomeEmail(email, fullName, password);
 
   return NextResponse.json({ ok: true });

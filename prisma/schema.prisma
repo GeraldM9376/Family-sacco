@@ -14,14 +14,23 @@ model User {
   phone         String
   passwordHash  String
   role          String    @default("user")
-  savingsTotal  Float     @default(0)
-  emergencyDebt Float     @default(0)
-  normalDebt    Float     @default(0)
   createdAt     DateTime  @default(now())
 
+  accounts Account[]
   payments Payment[]
   loans    Loan[]
   otp      Otp?
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   // "Account 1" or "Account 2"
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+
+  payments Payment[]
 }
 
 model Otp {
@@ -36,6 +45,8 @@ model Payment {
   id           String   @id @default(cuid())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId    String
+  account      Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   
   breakdown    String
   totalAmount  Float
@@ -53,10 +64,17 @@ model Loan {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId   String   // Loan is tied to an account
+  
   type        String
   principal   Float
   amountToPay Float
   paidAmount  Float    @default(0)
+  
+  // NEW INSTALLMENT FIELDS
+  periodMonths Int     @default(1)
+  monthlyInstallment Float
+  
   issuedOn    DateTime
   dueDate     DateTime
   status      String   @default("unpaid")

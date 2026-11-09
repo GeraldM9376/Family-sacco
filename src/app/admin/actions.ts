@@ -5,12 +5,11 @@ import { revalidatePath } from "next/cache";
 export async function approvePayment(paymentId: string) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
-    include: { user: true },
   });
 
   if (!payment || payment.status !== "pending") return;
 
-  const { userId } = payment;
+  const { userId, accountId } = payment;
   let breakdown: any = {};
   try { breakdown = JSON.parse(payment.breakdown || "{}"); } catch (e) {}
 
@@ -20,27 +19,20 @@ export async function approvePayment(paymentId: string) {
       data: { status: "approved" },
     });
 
+    // Savings go to the Account balance
     if (breakdown.savings > 0) {
-      await tx.user.update({
-        where: { id: userId },
-        data: { savingsTotal: { increment: Number(breakdown.savings) } },
+      await tx.account.update({
+        where: { id: accountId },
+        data: { balance: { increment: Number(breakdown.savings) } },
       });
     }
+    
+    // Loan payments distribute to specific loan records on that account
     if (breakdown.normal > 0) {
-      const newDebt = Math.max(0, payment.user.normalDebt - Number(breakdown.normal));
-      await tx.user.update({
-        where: { id: userId },
-        data: { normalDebt: newDebt },
-      });
-      await distributeLoanPayment(tx, userId, "normal", Number(breakdown.normal));
+      await distributeLoanPayment(tx, accountId, "normal", Number(breakdown.normal));
     }
     if (breakdown.emergency > 0) {
-      const newDebt = Math.max(0, payment.user.emergencyDebt - Number(breakdown.emergency));
-      await tx.user.update({
-        where: { id: userId },
-        data: { emergencyDebt: newDebt },
-      });
-      await distributeLoanPayment(tx, userId, "emergency", Number(breakdown.emergency));
+      await distributeLoanPayment(tx, accountId, "emergency", Number(breakdown.emergency));
     }
   });
 
@@ -81,41 +73,40 @@ export async function saveSettings(formData: FormData) {
 export async function createLoan(formData: FormData) {
   const idNumber = formData.get("idNumber") as string;
   const type = formData.get("type") as string; 
+  const accountName = formData.get("accountName") as string;
   const principal = Number(formData.get("principal"));
   const amountToPay = Number(formData.get("amountToPay"));
+  const periodMonths = Number(formData.get("periodMonths"));
   const issuedOn = new Date(formData.get("issuedOn") as string);
   const dueDate = new Date(formData.get("dueDate") as string);
 
-  if (!idNumber || !type || isNaN(principal) || isNaN(amountToPay)) {
+  if (!idNumber || !type || !accountName || isNaN(principal) || isNaN(amountToPay) || isNaN(periodMonths)) {
     throw new Error("Invalid loan details");
   }
 
-  const user = await prisma.user.findUnique({ where: { idNumber } });
+  const user = await prisma.user.findUnique({ 
+    where: { idNumber },
+    include: { accounts: true }
+  });
   if (!user) throw new Error("User with that ID does not exist.");
 
-  await prisma.$transaction(async (tx: any) => {
-    await tx.loan.create({
-      data: {
-        userId: user.id,
-        type,
-        principal,
-        amountToPay,
-        issuedOn,
-        dueDate,
-      },
-    });
+  const targetAccount = user.accounts.find(a => a.name === accountName);
+  if (!targetAccount) throw new Error("Account not found for this user.");
 
-    if (type === "normal") {
-      await tx.user.update({
-        where: { id: user.id },
-        data: { normalDebt: { increment: amountToPay } },
-      });
-    } else {
-      await tx.user.update({
-        where: { id: user.id },
-        data: { emergencyDebt: { increment: amountToPay } },
-      });
-    }
+  const monthlyInstallment = amountToPay / periodMonths;
+
+  await prisma.loan.create({
+    data: {
+      userId: user.id,
+      accountId: targetAccount.id,
+      type,
+      principal,
+      amountToPay,
+      periodMonths,
+      monthlyInstallment,
+      issuedOn,
+      dueDate,
+    },
   });
 
   revalidatePath("/admin");
@@ -125,20 +116,40 @@ export async function createLoan(formData: FormData) {
 
 export async function adminRecordPayment(formData: FormData) {
   const idNumber = formData.get("idNumber") as string;
+  const accountName = formData.get("accountName") as string;
   const type = formData.get("type") as string;
   const amount = Number(formData.get("amount"));
   const payerName = (formData.get("payerName") as string).toUpperCase();
   const paidOn = new Date(formData.get("paidOn") as string);
 
-  if (!idNumber || !type || isNaN(amount) || amount <= 0) {
+  if (!idNumber || !accountName || !type || isNaN(amount) || amount <= 0) {
     throw new Error("Invalid payment details");
   }
 
-  const user = await prisma.user.findUnique({ where: { idNumber } });
+  const user = await prisma.user.findUnique({ 
+    where: { idNumber },
+    include: { accounts: true }
+  });
   if (!user) throw new Error("User with that ID does not exist.");
 
-  if (type === "normal" && amount > user.normalDebt) throw new Error("Cannot pay more than the normal loan debt.");
-  if (type === "emergency" && amount > user.emergencyDebt) throw new Error("Cannot pay more than the emergency loan debt.");
+  const targetAccount = user.accounts.find(a => a.name === accountName);
+  if (!targetAccount) throw new Error("Account not found for this user.");
+
+  // Fetch this account's loans to validate
+  const accountLoans = await prisma.loan.findMany({
+    where: { accountId: targetAccount.id, userId: user.id, status: "unpaid" },
+  });
+
+  const normalDebt = accountLoans
+    .filter(l => l.type === "normal")
+    .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  
+  const emergencyDebt = accountLoans
+    .filter(l => l.type === "emergency")
+    .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+
+  if (type === "normal" && amount > normalDebt) throw new Error(`Cannot pay more than normal loan debt (KES ${normalDebt}).`);
+  if (type === "emergency" && amount > emergencyDebt) throw new Error(`Cannot pay more than emergency loan debt (KES ${emergencyDebt}).`);
 
   await prisma.$transaction(async (tx: any) => {
     const breakdown = JSON.stringify({ [type]: amount });
@@ -146,6 +157,7 @@ export async function adminRecordPayment(formData: FormData) {
     await tx.payment.create({
       data: {
         userId: user.id,
+        accountId: targetAccount.id,
         breakdown,
         totalAmount: amount,
         method: "admin",
@@ -157,24 +169,12 @@ export async function adminRecordPayment(formData: FormData) {
     });
 
     if (type === "savings") {
-      await tx.user.update({
-        where: { id: user.id },
-        data: { savingsTotal: { increment: amount } },
+      await tx.account.update({
+        where: { id: targetAccount.id },
+        data: { balance: { increment: amount } },
       });
-    } else if (type === "normal") {
-      const newDebt = Math.max(0, user.normalDebt - amount);
-      await tx.user.update({
-        where: { id: user.id },
-        data: { normalDebt: newDebt },
-      });
-      await distributeLoanPayment(tx, user.id, "normal", amount);
-    } else if (type === "emergency") {
-      const newDebt = Math.max(0, user.emergencyDebt - amount);
-      await tx.user.update({
-        where: { id: user.id },
-        data: { emergencyDebt: newDebt },
-      });
-      await distributeLoanPayment(tx, user.id, "emergency", amount);
+    } else if (type === "normal" || type === "emergency") {
+      await distributeLoanPayment(tx, targetAccount.id, type, amount);
     }
   });
 
@@ -183,10 +183,10 @@ export async function adminRecordPayment(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-async function distributeLoanPayment(tx: any, userId: string, type: string, amountPaid: number) {
+async function distributeLoanPayment(tx: any, accountId: string, type: string, amountPaid: number) {
   let remaining = amountPaid;
   const activeLoans = await tx.loan.findMany({
-    where: { userId, type, status: "unpaid" },
+    where: { accountId, type, status: "unpaid" },
     orderBy: { dueDate: "asc" },
   });
 

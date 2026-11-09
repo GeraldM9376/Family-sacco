@@ -44,12 +44,21 @@ export default function NewLoanPage() {
             className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-bold text-slate-300">Loan Type</label>
-          <select name="type" className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
-            <option value="normal">Normal Loan</option>
-            <option value="emergency">Emergency Loan</option>
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-bold text-slate-300">Loan Type</label>
+            <select name="type" className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
+              <option value="normal">Normal Loan</option>
+              <option value="emergency">Emergency Loan</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-bold text-slate-300">Target Account</label>
+            <select name="accountId" className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
+              <option value="1">Account 1</option>
+              <option value="2">Account 2</option>
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -59,10 +68,17 @@ export default function NewLoanPage() {
               className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-bold text-slate-300">Amount to Pay (With Interest)</label>
+            <label className="mb-1 block text-sm font-bold text-slate-300">Total to Pay (With Interest)</label>
             <input name="amountToPay" type="number" min="1" required placeholder="e.g. 5500"
               className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-bold text-slate-300">Payment Period (Months)</label>
+          <input name="periodMonths" type="number" min="1" required placeholder="e.g. 5"
+            className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+          <p className="text-xs text-slate-400 mt-1">The total amount will be divided into this many monthly installments.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

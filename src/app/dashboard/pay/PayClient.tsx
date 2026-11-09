@@ -3,8 +3,9 @@ import { useState } from "react";
 import { submitBulkPayment } from "./actions";
 import { useRouter } from "next/navigation";
 
-export default function PayClient({ user, setting }: { user: any, setting: any }) {
+export default function PayClient({ user, setting, loans }: { user: any, setting: any, loans: any[] }) {
   const router = useRouter();
+  const [selectedAccount, setSelectedAccount] = useState<string>(""); // STEP 1
   const [amounts, setAmounts] = useState({ savings: "", normal: "", emergency: "" });
   const [total, setTotal] = useState<number | null>(null);
   const [showOptions, setShowOptions] = useState(false);
@@ -17,6 +18,17 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
     setAmounts({ ...amounts, [field]: cleanValue });
   };
 
+  // Filter loans belonging to the selected account
+  const accountLoans = loans.filter(l => l.accountId === selectedAccount);
+  
+  const normalDebtForAccount = accountLoans
+    .filter(l => l.type === "normal")
+    .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+    
+  const emergencyDebtForAccount = accountLoans
+    .filter(l => l.type === "emergency")
+    .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+
   const calculateTotal = () => {
     const s = Number(amounts.savings) || 0;
     const n = Number(amounts.normal) || 0;
@@ -25,8 +37,8 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
     if (s < 0 || n < 0 || e < 0) return setErr("Amounts cannot be negative.");
     const sum = s + n + e;
     if (sum <= 0) return setErr("Please enter at least one amount.");
-    if (n > user.normalDebt) return setErr(`You cannot pay more than ${user.normalDebt} for normal loans.`);
-    if (e > user.emergencyDebt) return setErr(`You cannot pay more than ${user.emergencyDebt} for emergency loans.`);
+    if (n > normalDebtForAccount) return setErr(`You cannot pay more than ${normalDebtForAccount} for normal loans in this account.`);
+    if (e > emergencyDebtForAccount) return setErr(`You cannot pay more than ${emergencyDebtForAccount} for emergency loans in this account.`);
     
     setErr("");
     setTotal(sum);
@@ -41,6 +53,7 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
     setErr("");
     
     const fd = new FormData(e.currentTarget);
+    fd.append("accountId", selectedAccount); // NEW
     fd.append("totalAmount", total?.toString() || "0");
     fd.append("savingsAmt", amounts.savings || "0");
     fd.append("normalAmt", amounts.normal || "0");
@@ -56,11 +69,47 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
     }
   }
 
+  // STEP 1: SELECT ACCOUNT
+  if (!selectedAccount) {
+    return (
+      <div className="mx-auto max-w-md space-y-6 bg-slate-950 min-h-screen p-4 md:p-8">
+        <div className="text-center mt-10">
+          <h1 className="text-3xl font-extrabold text-white">Make a Payment</h1>
+          <p className="text-slate-400 mt-1">First, select which account you are paying into.</p>
+        </div>
+
+        <div className="space-y-4">
+          {user.accounts.map((acc: any) => (
+            <button
+              key={acc.id}
+              onClick={() => setSelectedAccount(acc.id)}
+              className="w-full p-6 rounded-2xl border-2 border-slate-800 bg-slate-900 text-left hover:border-indigo-500 transition shadow-sm group"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-white text-lg group-hover:text-indigo-400 transition">{acc.name}</p>
+                  <p className="text-sm text-slate-400 mt-1">Balance: {acc.balance.toLocaleString()}</p>
+                </div>
+                <span className="text-slate-500 text-2xl group-hover:text-indigo-400 transition">→</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // STEP 2 & 3: PAYMENT FORM
   return (
     <div className="mx-auto max-w-3xl space-y-6 bg-slate-950 min-h-screen p-4 md:p-8">
       <div className="text-center">
         <h1 className="text-3xl font-extrabold text-white">Make a Payment</h1>
-        <p className="text-slate-400 mt-1">Select what you are paying for and calculate your total.</p>
+        <p className="text-slate-400 mt-1">
+          Paying to: <span className="text-indigo-400 font-bold">{user.accounts.find((a: any) => a.id === selectedAccount)?.name}</span>
+        </p>
+        <button onClick={() => setSelectedAccount("")} className="text-xs text-slate-500 underline mt-2 hover:text-white">
+          Change Account
+        </button>
       </div>
 
       {!showOptions && (
@@ -74,21 +123,21 @@ export default function PayClient({ user, setting }: { user: any, setting: any }
               className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
           </div>
 
-          <div className={`flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 ${user.normalDebt <= 0 ? 'opacity-50' : ''}`}>
+          <div className={`flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 ${normalDebtForAccount <= 0 ? 'opacity-50' : ''}`}>
             <div>
               <p className="font-bold text-white">Normal Loan Repayment</p>
-              <p className="text-xs text-red-400">Outstanding: KES {user.normalDebt}</p>
+              <p className="text-xs text-red-400">Outstanding: KES {normalDebtForAccount}</p>
             </div>
-            <input type="number" min="0" step="1" disabled={user.normalDebt <= 0} placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
+            <input type="number" min="0" step="1" disabled={normalDebtForAccount <= 0} placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
               className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
           </div>
 
-          <div className={`flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 ${user.emergencyDebt <= 0 ? 'opacity-50' : ''}`}>
+          <div className={`flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 ${emergencyDebtForAccount <= 0 ? 'opacity-50' : ''}`}>
             <div>
               <p className="font-bold text-white">Emergency Loan Repayment</p>
-              <p className="text-xs text-red-400">Outstanding: KES {user.emergencyDebt}</p>
+              <p className="text-xs text-red-400">Outstanding: KES {emergencyDebtForAccount}</p>
             </div>
-            <input type="number" min="0" step="1" disabled={user.emergencyDebt <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
+            <input type="number" min="0" step="1" disabled={emergencyDebtForAccount <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
               className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
           </div>
 
