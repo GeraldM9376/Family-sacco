@@ -19,6 +19,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" style={{ colorScheme: "dark" }}>
+      {/* Force the body to be dark */}
       <body className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
         <Providers>
           <Suspense fallback={<div className="p-6 text-center text-slate-400">Loading...</div>}>

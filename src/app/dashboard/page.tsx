@@ -42,7 +42,8 @@ export default async function Dashboard() {
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
   return (
-    <div className="mx-auto max-w-7xl p-4 md:p-8 min-h-screen bg-slate-950">
+    // Removed bg-slate-950 from here, added mx-auto max-w-5xl to center on laptop
+    <div className="mx-auto max-w-5xl p-4 md:p-8">
       <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">

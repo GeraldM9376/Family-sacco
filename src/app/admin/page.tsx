@@ -66,7 +66,8 @@ export default async function AdminDashboard({
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <div className="mx-auto max-w-7xl p-4 md:p-8 min-h-screen bg-slate-950">
+    // Removed bg-slate-950 from here, added mx-auto max-w-7xl to center on laptop
+    <div className="mx-auto max-w-7xl p-4 md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
