@@ -12,12 +12,25 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
   const user = await prisma.user.findUnique({
     where: { id: resolvedParams.id },
     include: {
-      payments: { orderBy: { createdAt: "desc" } },
-      loans: { orderBy: { issuedOn: "desc" } },
+      accounts: true,
+      payments: { orderBy: { createdAt: "desc" }, include: { account: true } },
+      loans: { orderBy: { issuedOn: "desc" }, include: { account: true } },
     },
   });
 
   if (!user) return notFound();
+
+  // Calculate debt per account
+  const accountStats = user.accounts.map((acc) => {
+    const accLoans = user.loans.filter((l) => l.accountId === acc.id && l.status === "unpaid");
+    const normalDebt = accLoans
+      .filter((l) => l.type === "normal")
+      .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+    const emergencyDebt = accLoans
+      .filter((l) => l.type === "emergency")
+      .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+    return { ...acc, normalDebt, emergencyDebt };
+  });
 
   return (
     <div className="space-y-6 bg-slate-950 min-h-screen p-4 md:p-8">
@@ -35,22 +48,30 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl bg-slate-900 p-6 shadow-sm border border-slate-800">
-          <p className="text-sm text-slate-400">Total Savings</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">{fmt(user.savingsTotal)}</p>
-        </div>
-        <div className="rounded-2xl bg-slate-900 p-6 shadow-sm border border-slate-800">
-          <p className="text-sm text-slate-400">Normal Loan Debt</p>
-          <p className={`text-2xl font-bold mt-1 ${user.normalDebt > 0 ? "text-red-400" : "text-slate-500"}`}>
-            {fmt(user.normalDebt)}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-slate-900 p-6 shadow-sm border border-slate-800">
-          <p className="text-sm text-slate-400">Emergency Loan Debt</p>
-          <p className={`text-2xl font-bold mt-1 ${user.emergencyDebt > 0 ? "text-red-400" : "text-slate-500"}`}>
-            {fmt(user.emergencyDebt)}
-          </p>
+      {/* Accounts */}
+      <div>
+        <h2 className="text-xl font-bold text-white mb-4">Accounts</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {accountStats.map((acc) => (
+            <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+              <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{acc.name}</p>
+              <p className="text-2xl font-bold text-emerald-400 mt-1">{fmt(acc.balance)}</p>
+              <div className="mt-4 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Normal Debt:</span>
+                  <span className={acc.normalDebt > 0 ? "text-red-400 font-bold" : "text-slate-500"}>
+                    {fmt(acc.normalDebt)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Emergency Debt:</span>
+                  <span className={acc.emergencyDebt > 0 ? "text-red-400 font-bold" : "text-slate-500"}>
+                    {fmt(acc.emergencyDebt)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -71,11 +92,14 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                       {loan.status.toUpperCase()}
                     </span>
                   </div>
+                  <p className="text-xs text-slate-400 mb-2">Account: {loan.account?.name}</p>
                   <div className="text-sm text-slate-300 grid grid-cols-2 gap-2">
                     <p>Issued: <span className="font-medium text-white">{fmtDate(loan.issuedOn)}</span></p>
                     <p>Due: <span className="font-medium text-white">{fmtDate(loan.dueDate)}</span></p>
-                    <p>Amount to Pay: <span className="font-medium text-white">{fmt(loan.amountToPay)}</span></p>
-                    <p>Paid so far: <span className="font-medium text-white">{fmt(loan.paidAmount)}</span></p>
+                    <p>Total: <span className="font-medium text-white">{fmt(loan.amountToPay)}</span></p>
+                    <p>Paid: <span className="font-medium text-white">{fmt(loan.paidAmount)}</span></p>
+                    <p>Period: <span className="font-medium text-white">{loan.periodMonths} months</span></p>
+                    <p>Monthly: <span className="font-medium text-white">{fmt(loan.monthlyInstallment)}</span></p>
                   </div>
                 </div>
               ))
@@ -96,16 +120,20 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                   <div key={p.id} className="flex justify-between items-center rounded-xl bg-slate-800 p-3 border border-slate-700">
                     <div>
                       <p className="font-bold text-white">Total: {fmt(p.totalAmount)}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-400">{p.account?.name} • {fmtDate(p.paidOn)}</p>
+                      <p className="text-xs text-slate-400 mt-1">
                         {breakdown.savings > 0 && `Savings: ${fmt(breakdown.savings)} `}
                         {breakdown.normal > 0 && `| Normal: ${fmt(breakdown.normal)} `}
                         {breakdown.emergency > 0 && `| Emergency: ${fmt(breakdown.emergency)}`}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">Paid: {fmtDate(p.paidOn)} | Status: {p.status}</p>
                     </div>
-                    {p.status === "rejected" && p.rejectReason && (
-                      <span className="text-xs text-red-400 max-w-[150px] text-right">Reason: {p.rejectReason}</span>
-                    )}
+                    <span className={`px-2 py-1 rounded-md text-xs font-bold ${
+                      p.status === "approved" ? "bg-emerald-500/20 text-emerald-400" :
+                      p.status === "pending" ? "bg-amber-500/20 text-amber-400" :
+                      "bg-red-500/20 text-red-400"
+                    }`}>
+                      {p.status.toUpperCase()}
+                    </span>
                   </div>
                 );
               })

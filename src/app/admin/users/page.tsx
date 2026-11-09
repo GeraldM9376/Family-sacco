@@ -24,6 +24,10 @@ export default async function AdminUsersPage({
           ],
         }
       : {},
+    include: {
+      accounts: true,
+      loans: { where: { status: "unpaid" } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -68,39 +72,40 @@ export default async function AdminUsersPage({
                 <th className="p-4">Name</th>
                 <th className="p-4">ID Number</th>
                 <th className="p-4">Phone</th>
-                <th className="p-4 text-right">Savings</th>
-                <th className="p-4 text-right">Normal Debt</th>
-                <th className="p-4 text-right">Emergency Debt</th>
+                <th className="p-4 text-right">Total Savings</th>
+                <th className="p-4 text-right">Total Debt</th>
                 <th className="p-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                  <td colSpan={6} className="p-8 text-center text-slate-400">
                     No users found matching "{q}".
                   </td>
                 </tr>
               ) : (
-                users.map((user: any) => (
-                  <tr key={user.id} className="hover:bg-slate-800/50 transition">
-                    <td className="p-4 font-bold text-white">{user.fullName}</td>
-                    <td className="p-4 font-mono text-slate-300">{user.idNumber}</td>
-                    <td className="p-4 text-slate-300">{user.phone}</td>
-                    <td className="p-4 text-right font-semibold text-emerald-400">{fmt(user.savingsTotal)}</td>
-                    <td className={`p-4 text-right font-semibold ${user.normalDebt > 0 ? "text-red-400" : "text-slate-500"}`}>
-                      {fmt(user.normalDebt)}
-                    </td>
-                    <td className={`p-4 text-right font-semibold ${user.emergencyDebt > 0 ? "text-red-400" : "text-slate-500"}`}>
-                      {fmt(user.emergencyDebt)}
-                    </td>
-                    <td className="p-4 text-center">
-                      <Link href={`/admin/users/${user.id}`} className="text-sm font-bold text-indigo-400 hover:underline">
-                        View Profile
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                users.map((user: any) => {
+                  const totalSavings = user.accounts.reduce((sum: number, a: any) => sum + a.balance, 0);
+                  const totalDebt = user.loans.reduce((sum: number, l: any) => sum + (l.amountToPay - l.paidAmount), 0);
+                  
+                  return (
+                    <tr key={user.id} className="hover:bg-slate-800/50 transition">
+                      <td className="p-4 font-bold text-white">{user.fullName}</td>
+                      <td className="p-4 font-mono text-slate-300">{user.idNumber}</td>
+                      <td className="p-4 text-slate-300">{user.phone}</td>
+                      <td className="p-4 text-right font-semibold text-emerald-400">{fmt(totalSavings)}</td>
+                      <td className={`p-4 text-right font-semibold ${totalDebt > 0 ? "text-red-400" : "text-slate-500"}`}>
+                        {fmt(totalDebt)}
+                      </td>
+                      <td className="p-4 text-center">
+                        <Link href={`/admin/users/${user.id}`} className="text-sm font-bold text-indigo-400 hover:underline">
+                          View Profile
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
