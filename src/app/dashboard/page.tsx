@@ -117,47 +117,49 @@ export default async function Dashboard() {
         <p className="font-medium">{statusMessage}</p>
       </div>
 
-      {/* Request Loan Banner with Call/Text/WhatsApp */}
-      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      {/* Request Loan Banner with Clear Phone Number */}
+      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div>
-          <h3 className="font-bold text-indigo-300 text-lg">Need a Loan?</h3>
-          <p className="text-sm text-indigo-400/80 mt-1">
-            {adminPhone ? `Choose how to reach the Admin (${adminPhone})` : "Loan requests are processed by the Admin. Contact them to apply."}
+          <h3 className="font-bold text-indigo-300 text-lg mb-1">Need a Loan?</h3>
+          <p className="text-sm text-indigo-400/80 mb-4">
+            Loan requests are processed by the Admin. Contact them to apply.
           </p>
+          
+          {adminPhone && (
+            <div className="bg-slate-900/50 border border-slate-700/50 p-3 rounded-lg inline-block">
+              <p className="text-xs text-slate-400 mb-1">Admin Contact Number:</p>
+              <p className="text-2xl font-mono font-bold text-white tracking-wider">{adminPhone}</p>
+            </div>
+          )}
         </div>
         
         {adminPhone ? (
-          <div className="flex flex-wrap gap-3">
-            {/* Call Button */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             <a 
               href={`tel:${adminPhone}`}
-              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center gap-2"
+              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2"
             >
               <span className="text-lg">📞</span> Call
             </a>
-            
-            {/* SMS Button */}
             <a 
               href={`sms:${adminPhone}?body=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`}
-              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center gap-2"
+              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2"
             >
               <span className="text-lg">💬</span> Text
             </a>
-            
-            {/* WhatsApp Button */}
             <a 
               href={`https://wa.me/${adminPhone.replace(/\D/g, '')}?text=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-bold shadow hover:bg-emerald-500 transition flex items-center gap-2"
+              className="bg-emerald-600 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-emerald-500 transition flex items-center justify-center gap-2"
             >
               <span className="text-lg">💚</span> WhatsApp
             </a>
           </div>
         ) : (
-          <span className="bg-slate-800 text-slate-400 rounded-lg px-4 py-2 text-sm font-bold border border-slate-700">
-            Admin Phone Not Set
-          </span>
+          <div className="bg-slate-800 text-slate-400 rounded-lg px-4 py-3 text-sm font-bold border border-slate-700 text-center">
+            Admin phone number not configured in Settings
+          </div>
         )}
       </div>
 
