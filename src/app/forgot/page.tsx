@@ -52,51 +52,59 @@ export default function ForgotPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-3xl bg-slate-900 p-8 shadow-2xl border border-slate-800 mt-10">
-      <h1 className="mb-2 text-2xl font-bold text-white text-center">Reset Password</h1>
-      
-      {step === 1 ? (
-        <>
-          <p className="mb-6 text-sm text-slate-400 text-center">
-            Enter your ID Number. A reset code will be generated for the Admin to give you.
-          </p>
-          <form onSubmit={sendCode} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-bold text-slate-300">Your ID Number</label>
-              <input type="text" placeholder="e.g. 12345678" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
-                className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
-            </div>
+    <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 py-12">
+      <div className="w-full max-w-md bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl p-8 md:p-10">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-white tracking-tight">Reset Password</h1>
+        </div>
+        
+        {step === 1 ? (
+          <>
+            <p className="mb-6 text-sm text-slate-400 text-center">
+              Enter your ID Number. A reset code will be generated for the Admin to give you.
+            </p>
+            <form onSubmit={sendCode} className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-300">Your ID Number</label>
+                <input type="text" placeholder="e.g. 12345678" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white outline-none focus:bg-slate-800 focus:border-indigo-500" />
+              </div>
+              <Message text={msg?.text} type={msg?.type} />
+              <button disabled={loading} className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-500 transition disabled:opacity-60 mt-2">
+                {loading ? "Sending..." : "Send Code Request"}
+              </button>
+            </form>
+          </>
+        ) : (
+          <form onSubmit={reset} className="space-y-4">
             <Message text={msg?.text} type={msg?.type} />
-            <button disabled={loading} className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-500 transition disabled:opacity-60">
-              {loading ? "Sending..." : "Send Code Request"}
+            
+            <div className="bg-indigo-500/10 p-4 rounded-xl border border-indigo-500/30 text-indigo-300 text-sm font-bold text-center">
+              {adminMsg}
+            </div>
+            
+            <div>
+              <label className="mb-1.5 block text-sm font-bold text-slate-300">6-Digit Code</label>
+              <input placeholder="000000" required value={code} onChange={(e) => setCode(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-center text-xl tracking-[0.5em] font-mono text-white outline-none focus:bg-slate-800 focus:border-indigo-500" />
+            </div>
+            
+            <div>
+              <label className="mb-1.5 block text-sm font-bold text-slate-300">New Password</label>
+              <input type="password" placeholder="••••••••" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white outline-none focus:bg-slate-800 focus:border-indigo-500" />
+            </div>
+
+            <button disabled={loading} className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-500 transition disabled:opacity-60 mt-2">
+              {loading ? "Resetting..." : "Reset Password"}
             </button>
           </form>
-        </>
-      ) : (
-        <form onSubmit={reset} className="space-y-4">
-          <Message text={msg?.text} type={msg?.type} />
-          
-          <div className="bg-amber-500/10 p-4 rounded-xl border border-amber-500/30 text-amber-400 text-sm font-bold text-center">
-            {adminMsg}
-          </div>
-          
-          <div>
-            <label className="mb-1 block text-sm font-bold text-slate-300">6-Digit Code</label>
-            <input placeholder="000000" required value={code} onChange={(e) => setCode(e.target.value)}
-              className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-center text-xl tracking-[0.5em] font-mono text-white outline-none focus:border-indigo-500" />
-          </div>
-          
-          <div>
-            <label className="mb-1 block text-sm font-bold text-slate-300">New Password</label>
-            <input type="password" placeholder="••••••••" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
-          </div>
+        )}
 
-          <button disabled={loading} className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-500 transition disabled:opacity-60">
-            {loading ? "Resetting..." : "Reset Password"}
-          </button>
-        </form>
-      )}
+        <p className="mt-6 text-center text-sm text-slate-400">
+          Remembered it? <Link href="/login" className="text-indigo-400 font-bold hover:underline">Back to Login</Link>
+        </p>
+      </div>
     </div>
   );
 }

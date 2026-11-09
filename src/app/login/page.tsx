@@ -28,28 +28,28 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 py-12">
-      <div className="w-full max-w-md bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl p-8">
+      <div className="w-full max-w-md bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl p-8 md:p-10">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white">Sign In</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Sign In</h1>
           <p className="text-sm text-slate-400 mt-2">Welcome back to MAWEGA SACCO</p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={onSubmit} className="space-y-6">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-300">ID Number</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-300">ID Number</label>
             <input name="idNumber" placeholder="Enter your ID" required
               className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition-all focus:bg-slate-800 focus:border-indigo-500" />
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-center mb-1.5">
               <label className="block text-sm font-medium text-slate-300">Password</label>
               <Link href="/forgot" className="text-xs font-semibold text-indigo-400 hover:underline">Forgot?</Link>
             </div>
             <div className="relative">
               <input name="password" type={showPass ? "text" : "password"} placeholder="••••••••" required
                 className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 pr-12 text-white placeholder-slate-500 outline-none transition-all focus:bg-slate-800 focus:border-indigo-500" />
-              <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3 text-slate-400 hover:text-white">
+              <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3.5 text-slate-400 hover:text-white">
                 {showPass ? "🙈" : "👁️"}
               </button>
             </div>
@@ -58,7 +58,7 @@ export default function LoginPage() {
           <Message text={err} type="error" />
 
           <button disabled={loading}
-            className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white shadow-lg transition-all hover:bg-indigo-500 disabled:opacity-60 flex justify-center items-center gap-2 mt-2">
+            className="w-full rounded-xl bg-indigo-600 py-3.5 font-bold text-white shadow-lg transition-all hover:bg-indigo-500 disabled:opacity-60 flex justify-center items-center gap-2 mt-2">
             {loading ? <><span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> Signing in…</> : "Sign In"}
           </button>
         </form>

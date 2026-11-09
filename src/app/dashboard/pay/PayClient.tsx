@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function PayClient({ user, setting, loans }: { user: any, setting: any, loans: any[] }) {
   const router = useRouter();
-  const [selectedAccount, setSelectedAccount] = useState<string>(""); // STEP 1
+  const [selectedAccount, setSelectedAccount] = useState<string>("");
   const [amounts, setAmounts] = useState({ savings: "", normal: "", emergency: "" });
   const [total, setTotal] = useState<number | null>(null);
   const [showOptions, setShowOptions] = useState(false);
@@ -18,16 +18,9 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
     setAmounts({ ...amounts, [field]: cleanValue });
   };
 
-  // Filter loans belonging to the selected account
-  const accountLoans = loans.filter(l => l.accountId === selectedAccount);
-  
-  const normalDebtForAccount = accountLoans
-    .filter(l => l.type === "normal")
-    .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
-    
-  const emergencyDebtForAccount = accountLoans
-    .filter(l => l.type === "emergency")
-    .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  const accountLoans = loans.filter((l: any) => l.accountId === selectedAccount);
+  const normalDebtForAccount = accountLoans.filter((l: any) => l.type === "normal").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  const emergencyDebtForAccount = accountLoans.filter((l: any) => l.type === "emergency").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
 
   const calculateTotal = () => {
     const s = Number(amounts.savings) || 0;
@@ -53,7 +46,7 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
     setErr("");
     
     const fd = new FormData(e.currentTarget);
-    fd.append("accountId", selectedAccount); // NEW
+    fd.append("accountId", selectedAccount);
     fd.append("totalAmount", total?.toString() || "0");
     fd.append("savingsAmt", amounts.savings || "0");
     fd.append("normalAmt", amounts.normal || "0");
@@ -64,30 +57,25 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
       await submitBulkPayment(fd);
       window.location.href = "/dashboard?msg=Payment submitted for approval";
     } catch (error: any) {
-      setErr(error.message || "Something went wrong. Please try again.");
+      setErr(error.message || "Something went wrong.");
       setLoading(false); 
     }
   }
 
-  // STEP 1: SELECT ACCOUNT
   if (!selectedAccount) {
     return (
-      <div className="mx-auto max-w-md space-y-6 bg-slate-950 min-h-screen p-4 md:p-8">
-        <div className="text-center mt-10">
-          <h1 className="text-3xl font-extrabold text-white">Make a Payment</h1>
-          <p className="text-slate-400 mt-1">First, select which account you are paying into.</p>
-        </div>
-
+      <div className="mx-auto max-w-lg p-4 md:p-10 mt-10">
+        <h1 className="text-3xl font-extrabold text-white mb-8 text-center">Select Account</h1>
         <div className="space-y-4">
           {user.accounts.map((acc: any) => (
             <button
               key={acc.id}
               onClick={() => setSelectedAccount(acc.id)}
-              className="w-full p-6 rounded-2xl border-2 border-slate-800 bg-slate-900 text-left hover:border-indigo-500 transition shadow-sm group"
+              className="w-full p-6 rounded-2xl border border-slate-800 bg-slate-900 text-left hover:border-indigo-500 transition shadow-lg group"
             >
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-bold text-white text-lg group-hover:text-indigo-400 transition">{acc.name}</p>
+                  <p className="font-bold text-white text-xl group-hover:text-indigo-400 transition">{acc.name}</p>
                   <p className="text-sm text-slate-400 mt-1">Balance: {acc.balance.toLocaleString()}</p>
                 </div>
                 <span className="text-slate-500 text-2xl group-hover:text-indigo-400 transition">→</span>
@@ -99,22 +87,19 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
     );
   }
 
-  // STEP 2 & 3: PAYMENT FORM
   return (
-    <div className="mx-auto max-w-3xl space-y-6 bg-slate-950 min-h-screen p-4 md:p-8">
-      <div className="text-center">
+    <div className="mx-auto max-w-3xl p-4 md:p-10 min-h-screen">
+      <div className="text-center mb-10">
         <h1 className="text-3xl font-extrabold text-white">Make a Payment</h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-slate-400 mt-2">
           Paying to: <span className="text-indigo-400 font-bold">{user.accounts.find((a: any) => a.id === selectedAccount)?.name}</span>
         </p>
-        <button onClick={() => setSelectedAccount("")} className="text-xs text-slate-500 underline mt-2 hover:text-white">
-          Change Account
-        </button>
+        <button onClick={() => setSelectedAccount("")} className="text-xs text-slate-500 underline mt-2 hover:text-white">Change Account</button>
       </div>
 
       {!showOptions && (
-        <div className="rounded-3xl bg-slate-900 p-8 shadow-lg border border-slate-800 space-y-4">
-          <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
+        <div className="rounded-3xl bg-slate-900 p-8 border border-slate-800 shadow-xl space-y-4">
+          <div className="flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-700">
             <div>
               <p className="font-bold text-white">Monthly Savings</p>
               <p className="text-xs text-slate-400">Min: KES 350</p>
@@ -123,19 +108,19 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
               className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
           </div>
 
-          <div className={`flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 ${normalDebtForAccount <= 0 ? 'opacity-50' : ''}`}>
+          <div className={`flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-700 ${normalDebtForAccount <= 0 ? 'opacity-50' : ''}`}>
             <div>
-              <p className="font-bold text-white">Normal Loan Repayment</p>
-              <p className="text-xs text-red-400">Outstanding: KES {normalDebtForAccount}</p>
+              <p className="font-bold text-white">Normal Loan</p>
+              <p className="text-xs text-red-400">Owed: KES {normalDebtForAccount}</p>
             </div>
             <input type="number" min="0" step="1" disabled={normalDebtForAccount <= 0} placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
               className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
           </div>
 
-          <div className={`flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 ${emergencyDebtForAccount <= 0 ? 'opacity-50' : ''}`}>
+          <div className={`flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-700 ${emergencyDebtForAccount <= 0 ? 'opacity-50' : ''}`}>
             <div>
-              <p className="font-bold text-white">Emergency Loan Repayment</p>
-              <p className="text-xs text-red-400">Outstanding: KES {emergencyDebtForAccount}</p>
+              <p className="font-bold text-white">Emergency Loan</p>
+              <p className="text-xs text-red-400">Owed: KES {emergencyDebtForAccount}</p>
             </div>
             <input type="number" min="0" step="1" disabled={emergencyDebtForAccount <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
               className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
@@ -143,77 +128,68 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
 
           {err && <p className="text-red-400 text-sm font-bold text-center bg-red-500/10 p-2 rounded border border-red-500/20">{err}</p>}
 
-          <button onClick={calculateTotal} className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-500 transition">
+          <button onClick={calculateTotal} className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-500 transition shadow-lg">
             Calculate Total
           </button>
         </div>
       )}
 
       {showOptions && (
-        <div className="rounded-3xl bg-slate-900 p-8 shadow-lg border border-slate-800">
-          <div className="mb-6 rounded-xl bg-emerald-500/10 p-6 text-center border border-emerald-500/20">
-            <p className="text-emerald-400 font-medium">Total Amount to Pay</p>
-            <p className="text-4xl font-extrabold text-emerald-300 mt-1">KES {total}</p>
-            <button onClick={() => setShowOptions(false)} className="mt-2 text-xs text-emerald-400 font-bold underline">Edit amounts</button>
+        <div className="rounded-3xl bg-slate-900 p-8 border border-slate-800 shadow-xl">
+          <div className="mb-8 rounded-xl bg-slate-950 p-6 text-center border border-slate-800">
+            <p className="text-slate-400 font-medium">Total Amount to Pay</p>
+            <p className="text-5xl font-extrabold text-white mt-2">KES {total}</p>
+            <button onClick={() => setShowOptions(false)} className="mt-4 text-xs text-indigo-400 font-bold underline">Edit amounts</button>
           </div>
 
-          <h3 className="font-bold text-white mb-4">How would you like to pay?</h3>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <button onClick={() => setMethod("self")} className={`rounded-xl border-2 p-4 text-center transition ${method === "self" ? "border-indigo-500 bg-indigo-500/20" : "border-slate-700 hover:border-indigo-500/50"}`}>
-              <span className="block text-2xl mb-1">📱</span>
-              <span className="font-bold text-white text-sm">Pay by Myself</span>
-              <span className="block text-xs text-slate-400 mt-1">Via Bank/Paybill</span>
+          <h3 className="font-bold text-white mb-4">Payment Method</h3>
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <button onClick={() => setMethod("self")} className={`rounded-2xl border-2 p-6 text-center transition ${method === "self" ? "border-indigo-500 bg-indigo-500/10" : "border-slate-700 hover:border-indigo-500/50"}`}>
+              <span className="block text-3xl mb-2">📱</span>
+              <span className="font-bold text-white">Pay by Myself</span>
             </button>
-            <button onClick={() => setMethod("admin")} className={`rounded-xl border-2 p-4 text-center transition ${method === "admin" ? "border-indigo-500 bg-indigo-500/20" : "border-slate-700 hover:border-indigo-500/50"}`}>
-              <span className="block text-2xl mb-1">👨‍💼</span>
-              <span className="font-bold text-white text-sm">Admin Pays for Me</span>
-              <span className="block text-xs text-slate-400 mt-1">Send to Admin</span>
+            <button onClick={() => setMethod("admin")} className={`rounded-2xl border-2 p-6 text-center transition ${method === "admin" ? "border-indigo-500 bg-indigo-500/10" : "border-slate-700 hover:border-indigo-500/50"}`}>
+              <span className="block text-3xl mb-2">👨‍💼</span>
+              <span className="font-bold text-white">Admin Pays</span>
             </button>
           </div>
 
           {method && (
-            <form onSubmit={handleSubmit} className="space-y-4 border-t border-slate-700 pt-6">
-              <div className="bg-slate-800 p-4 rounded-xl mb-4 text-sm border border-slate-700">
+            <form onSubmit={handleSubmit} className="space-y-4 border-t border-slate-800 pt-8">
+              <div className="bg-slate-950 p-4 rounded-xl mb-6 text-sm border border-slate-800">
                 {method === "self" ? (
                   <>
-                    <p className="font-bold text-indigo-400 mb-2">Bank/Paybill Details</p>
+                    <p className="font-bold text-indigo-400 mb-2">Paybill Details</p>
                     <p className="text-white"><strong>Paybill:</strong> {setting?.paybill || "Not set"}</p>
                     <p className="text-white"><strong>Account:</strong> {setting?.accountNo || "Not set"}</p>
                   </>
                 ) : (
                   <>
-                    <p className="font-bold text-indigo-400 mb-2">Send Money To Admin</p>
+                    <p className="font-bold text-indigo-400 mb-2">Admin Details</p>
                     <p className="text-white"><strong>Phone:</strong> {setting?.sendMoneyTo || "Not set"}</p>
                     <p className="text-white"><strong>Name:</strong> {setting?.adminName || "Not set"}</p>
                   </>
                 )}
-                <p className="text-xs text-slate-400 mt-2">After sending, fill the form below to submit for approval.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-1">Name on Payment</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-1">Your Name</label>
                   <input name="payerName" required defaultValue={user.fullName} readOnly
-                    className="w-full rounded-xl border-2 border-slate-700 bg-slate-800 px-4 py-3 text-slate-400 font-semibold outline-none uppercase" />
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-slate-400 font-semibold outline-none uppercase" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-300 mb-1">Date Paid</label>
                   <input name="paidOn" type="date" required
-                    className="w-full rounded-xl border-2 border-slate-700 bg-slate-900 px-4 py-3 text-white font-semibold outline-none focus:border-indigo-500" />
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white font-semibold outline-none focus:border-indigo-500" />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-1">Your ID Number</label>
-                <input required defaultValue={user.idNumber} readOnly
-                  className="w-full rounded-xl border-2 border-slate-700 bg-slate-800 px-4 py-3 text-slate-400 font-semibold outline-none" />
               </div>
 
               {err && <p className="text-red-400 text-sm font-bold bg-red-500/10 p-3 rounded border border-red-500/20">{err}</p>}
 
               <button type="submit" disabled={loading}
-                className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white shadow-lg transition hover:bg-emerald-500 disabled:opacity-50 flex justify-center items-center gap-2">
-                {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : "Submit for Admin Approval"}
+                className="w-full rounded-xl bg-indigo-600 py-4 font-bold text-white shadow-lg transition hover:bg-indigo-500 disabled:opacity-50 flex justify-center items-center gap-2">
+                {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : "Submit for Approval"}
               </button>
             </form>
           )}
