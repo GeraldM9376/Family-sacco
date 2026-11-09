@@ -83,13 +83,9 @@ export default function SignupPage() {
   };
 
   return (
-    // Full screen dark background
-    <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 md:p-8 -m-4 md:-m-8">
-      
-      {/* The floating card */}
+    // Removed negative margins, fills full screen
+    <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 md:p-8">
       <div className="flex w-full max-w-5xl overflow-hidden rounded-3xl bg-slate-900 shadow-2xl border border-slate-800 md:flex-row flex-col my-8">
-        
-        {/* Left Side - Branding */}
         <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-indigo-700 via-purple-600 to-pink-500 p-12 text-white md:flex relative">
           <div className="relative z-10">
             <h2 className="text-4xl font-extrabold tracking-tight">Join MAWEGA SACCO.</h2>
@@ -99,7 +95,6 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* Right Side - Form */}
         <div className="w-full p-8 md:w-1/2 lg:p-12 relative overflow-y-auto">
           <h1 className="mb-2 text-3xl font-bold text-white">Create Account</h1>
           <p className="mb-8 text-sm text-slate-400">Already have an account? <Link href="/login" className="font-semibold text-indigo-400 hover:underline">Log in</Link></p>

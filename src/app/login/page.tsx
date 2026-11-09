@@ -27,10 +27,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 md:p-8 -m-4 md:-m-8">
+    // Removed negative margins, fills full screen
+    <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 md:p-8">
       <div className="flex w-full max-w-4xl overflow-hidden rounded-3xl bg-slate-900 shadow-2xl border border-slate-800 md:flex-row flex-col my-8">
-        
-        {/* Left Side - Branding */}
         <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 p-12 text-white md:flex relative">
           <div className="relative z-10 mt-10">
             <h2 className="text-4xl font-extrabold tracking-tight">Welcome Back.</h2>
@@ -40,7 +39,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right Side - Form */}
         <div className="w-full p-8 md:w-1/2 lg:p-12 flex flex-col justify-center">
           <h1 className="mb-2 text-3xl font-bold text-white">Sign In</h1>
           <p className="mb-8 text-sm text-slate-400">Don't have an account? <Link href="/signup" className="font-semibold text-indigo-400 hover:underline">Create one</Link></p>
