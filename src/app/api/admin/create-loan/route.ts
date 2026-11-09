@@ -11,13 +11,13 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { idNumber, type, accountId, issuedOn, dueDate } = body;
+    const { idNumber, type, issuedOn, dueDate } = body;
     
     const principal = Number(body.principal);
     const amountToPay = Number(body.amountToPay);
     const periodMonths = Number(body.periodMonths);
 
-    if (!idNumber || !type || !accountId || isNaN(principal) || isNaN(amountToPay) || isNaN(periodMonths)) {
+    if (!idNumber || !type || isNaN(principal) || isNaN(amountToPay) || isNaN(periodMonths)) {
       return NextResponse.json({ error: "Invalid loan details." }, { status: 400 });
     }
 
@@ -30,13 +30,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid User ID." }, { status: 404 });
     }
 
-    // Find the target account (e.g. Account 1 or Account 2)
-    const targetAccount = user.accounts.find(a => 
-      a.name === `Account ${accountId}` || a.id === accountId
-    );
-
-    if (!targetAccount) {
-      return NextResponse.json({ error: "Target Account not found." }, { status: 404 });
+    // Since a loan is user-based, we attach it to their first account silently
+    const primaryAccount = user.accounts[0];
+    if (!primaryAccount) {
+      return NextResponse.json({ error: "User has no accounts setup." }, { status: 400 });
     }
 
     const monthlyInstallment = amountToPay / periodMonths;
@@ -44,7 +41,7 @@ export async function POST(req: Request) {
     await prisma.loan.create({
       data: {
         userId: user.id,
-        accountId: targetAccount.id,
+        accountId: primaryAccount.id,
         type,
         principal,
         amountToPay,

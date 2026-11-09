@@ -5,12 +5,10 @@ export default function NewLoanPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   
-  // State for auto-calculating the due date
   const [issuedOn, setIssuedOn] = useState("");
   const [periodMonths, setPeriodMonths] = useState("");
   const [dueDate, setDueDate] = useState("");
 
-  // Auto-calculate Due Date whenever issuedOn or periodMonths changes
   useEffect(() => {
     if (issuedOn && periodMonths) {
       const issuedDate = new Date(issuedOn);
@@ -63,21 +61,12 @@ export default function NewLoanPage() {
               className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-bold text-slate-300">Loan Type</label>
-              <select name="type" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
-                <option value="normal">Normal Loan</option>
-                <option value="emergency">Emergency Loan</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-bold text-slate-300">Target Account</label>
-              <select name="accountName" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
-                <option value="Account 1">Account 1</option>
-                <option value="Account 2">Account 2</option>
-              </select>
-            </div>
+          <div>
+            <label className="mb-1 block text-sm font-bold text-slate-300">Loan Type</label>
+            <select name="type" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
+              <option value="normal">Normal Loan</option>
+              <option value="emergency">Emergency Loan</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
