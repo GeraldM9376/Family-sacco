@@ -74,7 +74,6 @@ export default async function Dashboard() {
 
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
-  // This month totals for top cards
   const thisMonthPayments = user.payments.filter((p: any) => {
     const pDate = new Date(p.paidOn);
     return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
@@ -87,7 +86,6 @@ export default async function Dashboard() {
     if (acc?.name === "Account 2") thisMonthTotals.account2 += p.totalAmount;
   });
 
-  // Savings progress (sum of all account balances vs minimum target)
   const totalSavings = user.accounts.reduce((sum, a) => sum + a.balance, 0);
   const savingsPct = Math.min(100, (totalSavings / 350) * 100);
 
@@ -117,6 +115,17 @@ export default async function Dashboard() {
       <div className={`rounded-xl border p-4 flex items-center gap-4 ${statusColor}`}>
         <div className="text-2xl">{!hasActiveLoans ? "✓" : "!"}</div>
         <p className="font-medium">{statusMessage}</p>
+      </div>
+
+      {/* NEW: Request Loan Banner */}
+      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h3 className="font-bold text-indigo-300">Need a Loan?</h3>
+          <p className="text-sm text-indigo-400/80 mt-1">Loan requests are processed by the Admin. Contact them to apply.</p>
+        </div>
+        <span className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-lg">
+          Contact Admin
+        </span>
       </div>
 
       {/* Account Balances */}
@@ -191,7 +200,7 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      {/* Active Loans with Progress Bars */}
+      {/* Active Loans */}
       <div>
         <h2 className="text-lg font-bold text-white mb-4">Active Loans</h2>
         {user.loans.length === 0 ? (

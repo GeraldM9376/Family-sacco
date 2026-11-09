@@ -142,7 +142,7 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
             <button onClick={() => setShowOptions(false)} className="mt-4 text-xs text-indigo-400 font-bold underline">Edit amounts</button>
           </div>
 
-          <h3 className="font-bold text-white mb-4">Payment Method</h3>
+          <h3 className="font-bold text-white mb-4">How would you like to pay?</h3>
           <div className="grid grid-cols-2 gap-4 mb-8">
             <button onClick={() => setMethod("self")} className={`rounded-2xl border-2 p-6 text-center transition ${method === "self" ? "border-indigo-500 bg-indigo-500/10" : "border-slate-700 hover:border-indigo-500/50"}`}>
               <span className="block text-3xl mb-2">📱</span>
@@ -150,24 +150,28 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
             </button>
             <button onClick={() => setMethod("admin")} className={`rounded-2xl border-2 p-6 text-center transition ${method === "admin" ? "border-indigo-500 bg-indigo-500/10" : "border-slate-700 hover:border-indigo-500/50"}`}>
               <span className="block text-3xl mb-2">👨‍💼</span>
-              <span className="font-bold text-white">Admin Pays</span>
+              <span className="font-bold text-white">Admin Pays for Me</span>
             </button>
           </div>
 
           {method && (
             <form onSubmit={handleSubmit} className="space-y-4 border-t border-slate-800 pt-8">
+              
+              {/* PAYMENT GUIDE */}
               <div className="bg-slate-950 p-4 rounded-xl mb-6 text-sm border border-slate-800">
                 {method === "self" ? (
                   <>
-                    <p className="font-bold text-indigo-400 mb-2">Paybill Details</p>
+                    <p className="font-bold text-indigo-400 mb-2">Pay by Myself (Paybill Guide)</p>
                     <p className="text-white"><strong>Paybill:</strong> {setting?.paybill || "Not set"}</p>
                     <p className="text-white"><strong>Account:</strong> {setting?.accountNo || "Not set"}</p>
+                    <p className="text-xs text-slate-500 mt-2">After sending, fill the form below to submit for approval.</p>
                   </>
                 ) : (
                   <>
-                    <p className="font-bold text-indigo-400 mb-2">Admin Details</p>
+                    <p className="font-bold text-indigo-400 mb-2">Admin Pays for Me (Send Money Guide)</p>
                     <p className="text-white"><strong>Phone:</strong> {setting?.sendMoneyTo || "Not set"}</p>
                     <p className="text-white"><strong>Name:</strong> {setting?.adminName || "Not set"}</p>
+                    <p className="text-xs text-slate-500 mt-2">After sending, fill the form below to submit for approval.</p>
                   </>
                 )}
               </div>
@@ -176,12 +180,12 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
                 <div>
                   <label className="block text-sm font-bold text-slate-300 mb-1">Your Name</label>
                   <input name="payerName" required defaultValue={user.fullName} readOnly
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-slate-400 font-semibold outline-none uppercase" />
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-slate-400 font-semibold outline-none uppercase" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-300 mb-1">Date Paid</label>
                   <input name="paidOn" type="date" required
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white font-semibold outline-none focus:border-indigo-500" />
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white font-semibold outline-none focus:border-indigo-500" />
                 </div>
               </div>
 
