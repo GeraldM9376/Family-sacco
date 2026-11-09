@@ -27,7 +27,6 @@ export default async function Dashboard() {
   const greeting = eatHour < 12 ? "Good morning" : eatHour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user.fullName.split(" ")[0];
 
-  // Calculate monthly totals per account
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   const monthlyTotals: any = { "Account 1": 0, "Account 2": 0 };
@@ -35,16 +34,15 @@ export default async function Dashboard() {
   user.payments.forEach((p: any) => {
     const pDate = new Date(p.paidOn);
     if (pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear && p.status === "approved") {
-      const acc = user.accounts.find(a => a.id === p.accountId);
+      const acc = user.accounts.find((a: any) => a.id === p.accountId);
       if (acc) monthlyTotals[acc.name] += p.totalAmount;
     }
   });
 
-  const grandTotal = user.accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
   return (
-    <div className="space-y-8 pb-12 bg-slate-950 min-h-screen p-4 md:p-8">
-      {/* Header */}
+    <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
@@ -62,9 +60,8 @@ export default async function Dashboard() {
         </Link>
       </div>
 
-      {/* Accounts Overview */}
       <div className="grid gap-6 md:grid-cols-2">
-        {user.accounts.map((acc) => (
+        {user.accounts.map((acc: any) => (
           <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
             <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{acc.name}</p>
             <p className="text-3xl font-extrabold text-white mt-2">{fmt(acc.balance)}</p>
@@ -73,13 +70,11 @@ export default async function Dashboard() {
         ))}
       </div>
 
-      {/* Grand Total */}
       <div className="rounded-2xl bg-indigo-600 p-6 text-white shadow-lg">
         <p className="text-sm font-semibold uppercase tracking-wider">Grand Total (Both Accounts)</p>
         <p className="text-4xl font-extrabold mt-1">{fmt(grandTotal)}</p>
       </div>
 
-      {/* Active Loans with Installments */}
       <div className="rounded-2xl bg-slate-900 border border-slate-800 p-6">
         <h2 className="text-lg font-bold text-white mb-4">Active Loans</h2>
         {user.loans.length === 0 ? (
@@ -96,7 +91,6 @@ export default async function Dashboard() {
                     <span className="text-red-400 font-bold">{fmt(remaining)} Left</span>
                   </div>
                   
-                  {/* Total Progress */}
                   <div className="mb-4">
                     <div className="flex justify-between text-xs text-slate-400 mb-1">
                       <span>Total Paid: {fmt(loan.paidAmount)}</span>
@@ -105,7 +99,6 @@ export default async function Dashboard() {
                     <Bar pct={(loan.paidAmount / loan.amountToPay) * 100} color="indigo" />
                   </div>
 
-                  {/* Installment Progress */}
                   <div>
                     <div className="flex justify-between text-xs text-slate-400 mb-1">
                       <span>Installments Paid: {paidInstallments} / {loan.periodMonths}</span>
