@@ -83,11 +83,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="animated-bg min-h-screen flex items-center justify-center p-4 md:p-0 -m-4 md:-m-8">
-      <div className="flex w-full max-w-5xl overflow-hidden rounded-3xl glass-panel shadow-2xl md:flex-row flex-col my-8">
+    // Full screen dark background
+    <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 md:p-8 -m-4 md:-m-8">
+      
+      {/* The floating card */}
+      <div className="flex w-full max-w-5xl overflow-hidden rounded-3xl bg-slate-900 shadow-2xl border border-slate-800 md:flex-row flex-col my-8">
         
         {/* Left Side - Branding */}
-        <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-indigo-600/40 to-pink-600/40 p-12 text-white md:flex relative backdrop-blur-sm">
+        <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-indigo-700 via-purple-600 to-pink-500 p-12 text-white md:flex relative">
           <div className="relative z-10">
             <h2 className="text-4xl font-extrabold tracking-tight">Join MAWEGA SACCO.</h2>
             <p className="mt-4 text-lg text-indigo-100">

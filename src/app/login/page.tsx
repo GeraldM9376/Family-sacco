@@ -27,14 +27,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="animated-bg min-h-screen flex items-center justify-center p-4 md:p-0 -m-4 md:-m-8">
-      <div className="flex w-full max-w-4xl overflow-hidden rounded-3xl glass-panel shadow-2xl md:flex-row flex-col">
+    <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 md:p-8 -m-4 md:-m-8">
+      <div className="flex w-full max-w-4xl overflow-hidden rounded-3xl bg-slate-900 shadow-2xl border border-slate-800 md:flex-row flex-col my-8">
         
         {/* Left Side - Branding */}
-        <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-indigo-600/40 to-purple-900/40 p-12 text-white md:flex relative backdrop-blur-sm">
+        <div className="hidden w-1/2 flex-col justify-between bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 p-12 text-white md:flex relative">
           <div className="relative z-10 mt-10">
             <h2 className="text-4xl font-extrabold tracking-tight">Welcome Back.</h2>
-            <p className="mt-4 text-lg text-indigo-100">
+            <p className="mt-4 text-lg text-indigo-200">
               Log in to manage your savings, view your loan progress, and stay on top of your finances.
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function LoginPage() {
             <div>
               <label className="mb-1 block text-sm font-bold text-slate-300">ID Number</label>
               <input name="idNumber" placeholder="Enter your ID" required
-                className="w-full rounded-xl border border-slate-600 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition-all focus:border-indigo-500 focus:bg-slate-800" />
+                className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition-all focus:bg-slate-800 focus:border-indigo-500" />
             </div>
 
             <div>
@@ -59,7 +59,7 @@ export default function LoginPage() {
               </div>
               <div className="relative">
                 <input name="password" type={showPass ? "text" : "password"} placeholder="••••••••" required
-                  className="w-full rounded-xl border border-slate-600 bg-slate-800/50 px-4 py-3 pr-12 text-white placeholder-slate-500 outline-none transition-all focus:border-indigo-500 focus:bg-slate-800" />
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 pr-12 text-white placeholder-slate-500 outline-none transition-all focus:bg-slate-800 focus:border-indigo-500" />
                 <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3 text-slate-400 hover:text-white">
                   {showPass ? "🙈" : "👁️"}
                 </button>
