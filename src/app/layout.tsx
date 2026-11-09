@@ -23,7 +23,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Suspense fallback={<div className="p-6 text-center text-slate-400">Loading...</div>}>
             <Nav />
-            {/* Removed max-w-7xl to let the dark background fill the entire screen */}
             <main className="w-full">{children}</main>
           </Suspense>
         </Providers>

@@ -28,14 +28,9 @@ export default async function AdminDashboard({
   const users = await prisma.user.findMany({
     include: {
       payments: {
-        where: {
-          status: "approved",
-          paidOn: { gte: startOfMonth, lte: endOfMonth },
-        },
+        where: { status: "approved", paidOn: { gte: startOfMonth, lte: endOfMonth } },
       },
-      loans: {
-        where: { status: "unpaid" },
-      },
+      loans: { where: { status: "unpaid" } },
     },
   });
 
@@ -50,37 +45,20 @@ export default async function AdminDashboard({
     user.payments.forEach((p: any) => {
       try {
         const breakdown = typeof p.breakdown === 'string' ? JSON.parse(p.breakdown) : p.breakdown;
-        if (breakdown && breakdown.savings) {
-          monthlySavings += Number(breakdown.savings);
-        }
+        if (breakdown && breakdown.savings) monthlySavings += Number(breakdown.savings);
       } catch (e) {}
     });
 
     totalMonthlyContribution += monthlySavings;
 
     if (monthlySavings < 350) {
-      unpaidUsers.push({
-        id: user.id,
-        fullName: user.fullName,
-        idNumber: user.idNumber,
-        paid: monthlySavings,
-        remaining: 350 - monthlySavings,
-      });
+      unpaidUsers.push({ id: user.id, fullName: user.fullName, idNumber: user.idNumber, paid: monthlySavings, remaining: 350 - monthlySavings });
       totalUnpaidAmount += (350 - monthlySavings);
     }
 
     user.loans.forEach((loan: any) => {
       const remaining = loan.amountToPay - loan.paidAmount;
-      activeLoansList.push({
-        id: loan.id,
-        userName: user.fullName,
-        idNumber: user.idNumber,
-        type: loan.type,
-        issuedOn: loan.issuedOn,
-        dueDate: loan.dueDate,
-        remaining: remaining,
-        paid: loan.paidAmount,
-      });
+      activeLoansList.push({ id: loan.id, userName: user.fullName, idNumber: user.idNumber, type: loan.type, dueDate: loan.dueDate, remaining, paid: loan.paidAmount });
       totalLoanDebt += remaining;
     });
   });
@@ -88,106 +66,84 @@ export default async function AdminDashboard({
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <div className="space-y-8 pb-12">
-      
-      {/* Header */}
+    <div className="mx-auto max-w-7xl p-4 md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">Admin Dashboard</h1>
-          <p className="text-slate-400 mt-1">Manage approvals and view monthly Sacco reports.</p>
+          <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+          <p className="text-slate-400 mt-1">Manage approvals and reports.</p>
         </div>
         
-        <form className="flex gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-700 shadow-sm">
-          <select name="month" defaultValue={currentMonth} className="rounded-lg border-0 bg-transparent py-2 pl-3 pr-8 text-sm font-semibold text-slate-200 focus:ring-0">
-            {months.map((m, i) => (
-              <option key={i} value={i} className="bg-slate-900">{m}</option>
-            ))}
+        <form className="flex gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+          <select name="month" defaultValue={currentMonth} className="rounded-lg border-0 bg-transparent py-2 pl-3 pr-8 text-sm font-semibold text-white focus:ring-0">
+            {months.map((m, i) => <option key={i} value={i} className="bg-slate-900">{m}</option>)}
           </select>
-          <select name="year" defaultValue={currentYear} className="rounded-lg border-0 bg-transparent py-2 pl-3 pr-8 text-sm font-semibold text-slate-200 focus:ring-0">
+          <select name="year" defaultValue={currentYear} className="rounded-lg border-0 bg-transparent py-2 pl-3 pr-8 text-sm font-semibold text-white focus:ring-0">
             <option value={2024} className="bg-slate-900">2024</option>
             <option value={2025} className="bg-slate-900">2025</option>
             <option value={2026} className="bg-slate-900">2026</option>
           </select>
-          <button className="rounded-lg bg-slate-800 border border-slate-600 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700 transition">
-            View Report
-          </button>
+          <button className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700">View</button>
         </form>
       </div>
 
-      {/* Master Metrics */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
+      <div className="grid gap-6 md:grid-cols-3 mt-8">
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
           <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Total Contributions</p>
-          <p className="text-3xl font-extrabold text-white">{fmt(totalMonthlyContribution)}</p>
+          <p className="text-3xl font-bold text-white">{fmt(totalMonthlyContribution)}</p>
         </div>
-        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
           <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Total Loan Debt</p>
-          <p className="text-3xl font-extrabold text-white">{fmt(totalLoanDebt)}</p>
+          <p className="text-3xl font-bold text-white">{fmt(totalLoanDebt)}</p>
         </div>
-        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
-          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Unpaid Contributions</p>
-          <p className="text-3xl font-extrabold text-white">{fmt(totalUnpaidAmount)}</p>
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Unpaid Target</p>
+          <p className="text-3xl font-bold text-white">{fmt(totalUnpaidAmount)}</p>
         </div>
       </div>
 
-      {/* Pending Approvals */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 mt-8">
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white">Pending Approvals</h2>
+          <h2 className="text-lg font-bold text-white">Pending Approvals</h2>
           <span className="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-md border border-slate-700">{pendingPayments.length} awaiting</span>
         </div>
         <div className="p-6">
           {pendingPayments.length === 0 ? (
-            <p className="text-slate-400 text-center py-4">All caught up. No pending payments to approve.</p>
+            <p className="text-slate-400 text-center py-4">No pending payments.</p>
           ) : (
             <div className="space-y-4">
               {pendingPayments.map((p: any) => {
                 let breakdown: any = {};
                 try { breakdown = typeof p.breakdown === 'string' ? JSON.parse(p.breakdown) : p.breakdown; } catch (e) {}
-                
                 return (
-                  <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-slate-700 p-5 bg-slate-800/50 hover:bg-slate-800 transition-colors">
+                  <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-slate-800 p-5 bg-slate-950">
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <p className="font-bold text-lg text-white">Total: {fmt(p.totalAmount)}</p>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700 text-slate-300 uppercase tracking-wider border border-slate-600">
-                          {p.method === "admin" ? "Admin Assisted" : "Self Pay"}
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 uppercase tracking-wider border border-indigo-500/30">
+                        <p className="font-bold text-lg text-white">{fmt(p.totalAmount)}</p>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 uppercase border border-slate-700">
                           {p.account?.name || "Account"}
                         </span>
                       </div>
                       <p className="text-sm text-slate-400">
-                        <span className="font-semibold text-slate-200">{p.user.fullName}</span> • ID: {p.user.idNumber}
+                        <span className="text-slate-200">{p.user.fullName}</span> • ID: {p.user.idNumber}
                       </p>
-                      <div className="text-xs text-slate-400 mt-2 flex gap-3">
-                        {breakdown?.savings > 0 && <span className="text-emerald-400 font-medium">Savings: {fmt(breakdown.savings)}</span>}
-                        {breakdown?.normal > 0 && <span className="text-amber-400 font-medium">Normal: {fmt(breakdown.normal)}</span>}
-                        {breakdown?.emergency > 0 && <span className="text-red-400 font-medium">Emergency: {fmt(breakdown.emergency)}</span>}
+                      <div className="text-xs text-slate-400 mt-1 flex gap-3">
+                        {breakdown?.savings > 0 && <span>Savings: {fmt(breakdown.savings)}</span>}
+                        {breakdown?.normal > 0 && <span>Normal: {fmt(breakdown.normal)}</span>}
+                        {breakdown?.emergency > 0 && <span>Emergency: {fmt(breakdown.emergency)}</span>}
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">Paid on {fmtDate(p.paidOn)} by {p.payerName}</p>
+                      <p className="text-xs text-slate-500 mt-1">Paid on {fmtDate(p.paidOn)}</p>
                     </div>
-
-                    <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
-                      <form action={async () => {
-                        "use server";
-                        await approvePayment(p.id);
-                      }} className="flex-1 md:flex-none">
-                        <button className="w-full rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-500 transition">
-                          Approve
-                        </button>
+                    <div className="flex items-center gap-3">
+                      <form action={async () => { "use server"; await approvePayment(p.id); }}>
+                        <button className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white hover:bg-indigo-500">Approve</button>
                       </form>
-
                       <form action={async (formData) => {
                         "use server";
                         const reason = formData.get("reason") as string;
                         await rejectPayment(p.id, reason);
-                      }} className="flex-1 md:flex-none flex gap-2">
-                        <input name="reason" placeholder="Reason..." required
-                          className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-red-500 placeholder-slate-500" />
-                        <button className="rounded-lg bg-slate-800 border border-slate-600 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition">
-                          Reject
-                        </button>
+                      }} className="flex gap-2">
+                        <input name="reason" placeholder="Reason..." required className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-red-500" />
+                        <button className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20">Reject</button>
                       </form>
                     </div>
                   </div>
@@ -198,21 +154,16 @@ export default async function AdminDashboard({
         </div>
       </div>
 
-      {/* Reports Grid */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-800">
-            <h2 className="text-lg font-bold text-white">Monthly Contributions (&lt; 350)</h2>
-          </div>
-          <div className="p-5 space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-            {unpaidUsers.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">Everyone has paid the minimum 350 this month!</p>
-            ) : (
+      <div className="grid gap-6 md:grid-cols-2 mt-8">
+        <div className="rounded-2xl bg-slate-900 border border-slate-800">
+          <div className="p-5 border-b border-slate-800"><h2 className="text-lg font-bold text-white">Unpaid (&lt; 350)</h2></div>
+          <div className="p-5 space-y-3 max-h-[350px] overflow-y-auto">
+            {unpaidUsers.length === 0 ? <p className="text-sm text-slate-400 text-center py-4">All paid up!</p> :
               unpaidUsers.map((u) => (
-                <div key={u.id} className="flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                <div key={u.id} className="flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-800">
                   <div>
                     <p className="font-bold text-slate-200 text-sm">{u.fullName}</p>
-                    <p className="text-xs text-slate-500 font-mono mt-0.5">{u.idNumber}</p>
+                    <p className="text-xs text-slate-500">{u.idNumber}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold text-red-400">- {fmt(u.remaining)}</p>
@@ -220,34 +171,30 @@ export default async function AdminDashboard({
                   </div>
                 </div>
               ))
-            )}
+            }
           </div>
         </div>
 
-        <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-800">
-            <h2 className="text-lg font-bold text-white">Active Loans Overview</h2>
-          </div>
-          <div className="p-5 space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-            {activeLoansList.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No active loans right now.</p>
-            ) : (
+        <div className="rounded-2xl bg-slate-900 border border-slate-800">
+          <div className="p-5 border-b border-slate-800"><h2 className="text-lg font-bold text-white">Active Loans</h2></div>
+          <div className="p-5 space-y-3 max-h-[350px] overflow-y-auto">
+            {activeLoansList.length === 0 ? <p className="text-sm text-slate-400 text-center py-4">No active loans.</p> :
               activeLoansList.map((l) => (
-                <div key={l.id} className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                <div key={l.id} className="bg-slate-800/50 p-4 rounded-xl border border-slate-800">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <p className="font-bold text-slate-200 text-sm">{l.userName}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">ID: {l.idNumber} • <span className="uppercase text-slate-400 font-bold text-[10px]">{l.type}</span></p>
+                      <p className="text-xs text-slate-500">ID: {l.idNumber} • {l.type}</p>
                     </div>
-                    <span className="text-[10px] font-bold bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-600">Due {fmtDate(l.dueDate)}</span>
+                    <span className="text-[10px] font-bold bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">Due {fmtDate(l.dueDate)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm bg-slate-900 p-2 rounded-lg border border-slate-800">
-                    <div><span className="text-slate-500 text-xs">Remaining:</span> <span className="font-bold text-red-400">{fmt(l.remaining)}</span></div>
-                    <div><span className="text-slate-500 text-xs">Paid:</span> <span className="font-bold text-emerald-400">{fmt(l.paid)}</span></div>
+                  <div className="flex justify-between items-center text-sm bg-slate-950 p-2 rounded-lg border border-slate-800">
+                    <div><span className="text-slate-500 text-xs">Left:</span> <span className="font-bold text-red-400">{fmt(l.remaining)}</span></div>
+                    <div><span className="text-slate-500 text-xs">Paid:</span> <span className="font-bold text-indigo-400">{fmt(l.paid)}</span></div>
                   </div>
                 </div>
               ))
-            )}
+            }
           </div>
         </div>
       </div>
