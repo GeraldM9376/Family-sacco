@@ -14,7 +14,7 @@ export default async function Dashboard() {
     where: { id: (s!.user as any).id },
     include: {
       accounts: true,
-      payments: { where: { status: "pending" }, orderBy: { createdAt: "desc" } },
+      payments: { where: { status: "approved" }, orderBy: { paidOn: "desc" } },
       loans: { where: { status: "unpaid" }, orderBy: { dueDate: "asc" } },
     },
   });
@@ -27,23 +27,73 @@ export default async function Dashboard() {
   const greeting = eatHour < 12 ? "Good morning" : eatHour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user.fullName.split(" ")[0];
 
-  const currentMonth = now.getMonth();
+  const currentMonthName = now.toLocaleString('default', { month: 'long' });
   const currentYear = now.getFullYear();
-  const monthlyTotals: any = { "Account 1": 0, "Account 2": 0 };
+
+  // --- Status Banner Logic ---
+  const hasActiveLoans = user.loans.length > 0;
+  let statusMessage = "";
+  let statusColor = "";
+  
+  if (!hasActiveLoans && user.accounts.reduce((sum, a) => sum + a.balance, 0) > 1000) {
+    statusMessage = "You are completely debt-free and your savings are growing strong. Amazing work!";
+    statusColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+  } else if (!hasActiveLoans) {
+    statusMessage = "You have zero active loans. A clean slate! Keep building your wealth.";
+    statusColor = "bg-slate-800 text-slate-300 border-slate-700";
+  } else {
+    statusMessage = "You have active loans. Every payment brings you closer to financial freedom.";
+    statusColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+  }
+
+  // --- Monthly Breakdown Logic ---
+  const monthlyData: Record<string, { account1: number, account2: number, total: number }> = {};
+  let allTimeTotal = 0;
 
   user.payments.forEach((p: any) => {
     const pDate = new Date(p.paidOn);
-    if (pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear && p.status === "approved") {
-      const acc = user.accounts.find((a: any) => a.id === p.accountId);
-      if (acc) monthlyTotals[acc.name] += p.totalAmount;
+    const monthKey = `${pDate.toLocaleString('default', { month: 'long' })} ${pDate.getFullYear()}`;
+    
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { account1: 0, account2: 0, total: 0 };
+    }
+
+    const acc = user.accounts.find((a: any) => a.id === p.accountId);
+    if (acc) {
+      if (acc.name === "Account 1") monthlyData[monthKey].account1 += p.totalAmount;
+      if (acc.name === "Account 2") monthlyData[monthKey].account2 += p.totalAmount;
+      monthlyData[monthKey].total += p.totalAmount;
+      allTimeTotal += p.totalAmount;
     }
   });
 
+  const monthlyList = Object.keys(monthlyData).map((key) => ({
+    month: key,
+    ...monthlyData[key],
+  })).sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
+
+  // This month totals for top cards
+  const thisMonthPayments = user.payments.filter((p: any) => {
+    const pDate = new Date(p.paidOn);
+    return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
+  });
+  
+  const thisMonthTotals = { account1: 0, account2: 0 };
+  thisMonthPayments.forEach((p: any) => {
+    const acc = user.accounts.find((a: any) => a.id === p.accountId);
+    if (acc?.name === "Account 1") thisMonthTotals.account1 += p.totalAmount;
+    if (acc?.name === "Account 2") thisMonthTotals.account2 += p.totalAmount;
+  });
+
+  // Savings progress (sum of all account balances vs minimum target)
+  const totalSavings = user.accounts.reduce((sum, a) => sum + a.balance, 0);
+  const savingsPct = Math.min(100, (totalSavings / 350) * 100);
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-10 space-y-8">
-      {/* Clean Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-8">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight">
@@ -63,24 +113,85 @@ export default async function Dashboard() {
         </Link>
       </div>
 
-      {/* Accounts */}
+      {/* Status Banner */}
+      <div className={`rounded-xl border p-4 flex items-center gap-4 ${statusColor}`}>
+        <div className="text-2xl">{!hasActiveLoans ? "✓" : "!"}</div>
+        <p className="font-medium">{statusMessage}</p>
+      </div>
+
+      {/* Account Balances */}
       <div className="grid gap-6 md:grid-cols-2">
         {user.accounts.map((acc: any) => (
           <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{acc.name}</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{acc.name} Balance</p>
             <p className="text-3xl font-bold text-white mt-2">{fmt(acc.balance)}</p>
-            <p className="text-xs text-slate-500 mt-1">This month: {fmt(monthlyTotals[acc.name] || 0)}</p>
+            <p className="text-xs text-slate-500 mt-1">This month: {fmt(thisMonthTotals[acc.name === "Account 1" ? "account1" : "account2"])}</p>
           </div>
         ))}
       </div>
 
-      {/* Grand Total */}
+      {/* Grand Total + Savings Progress */}
       <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
-        <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest">Grand Total</p>
-        <p className="text-4xl font-bold text-white mt-2">{fmt(grandTotal)}</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest">Current Grand Total Balance</p>
+            <p className="text-4xl font-bold text-white mt-2">{fmt(grandTotal)}</p>
+          </div>
+          <div className="w-full md:w-1/2">
+            <div className="flex justify-between text-xs text-slate-400 mb-2">
+              <span>Savings Progress (Target: 350)</span>
+              <span>{Math.round(savingsPct)}%</span>
+            </div>
+            <Bar pct={savingsPct} color="emerald" />
+          </div>
+        </div>
       </div>
 
-      {/* Loans */}
+      {/* MONTHLY BREAKDOWN TABLE */}
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
+        <div className="p-6 border-b border-slate-800">
+          <h2 className="text-lg font-bold text-white">Monthly Payments Breakdown</h2>
+          <p className="text-xs text-slate-500 mt-1">Every month's contributions per account.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-950 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                <th className="p-5">Month / Year</th>
+                <th className="p-5 text-right">Account 1</th>
+                <th className="p-5 text-right">Account 2</th>
+                <th className="p-5 text-right">Monthly Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {monthlyList.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-slate-500">No payments made yet.</td>
+                </tr>
+              ) : (
+                monthlyList.map((m) => (
+                  <tr key={m.month} className="hover:bg-slate-800/30 transition">
+                    <td className="p-5 font-bold text-white">{m.month}</td>
+                    <td className="p-5 text-right text-slate-300">{fmt(m.account1)}</td>
+                    <td className="p-5 text-right text-slate-300">{fmt(m.account2)}</td>
+                    <td className="p-5 text-right font-bold text-indigo-400">{fmt(m.total)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            <tfoot className="bg-slate-950 border-t border-slate-800">
+              <tr>
+                <td className="p-5 font-bold text-white">All-Time Total</td>
+                <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account1, 0))}</td>
+                <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account2, 0))}</td>
+                <td className="p-5 text-right font-bold text-indigo-400">{fmt(allTimeTotal)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {/* Active Loans with Progress Bars */}
       <div>
         <h2 className="text-lg font-bold text-white mb-4">Active Loans</h2>
         {user.loans.length === 0 ? (
