@@ -66,7 +66,7 @@ export default async function AdminDashboard({
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <div className="mx-auto max-w-7xl p-4 md:p-8">
+    <div className="mx-auto max-w-7xl p-4 md:p-8 min-h-screen bg-slate-950">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
@@ -87,21 +87,21 @@ export default async function AdminDashboard({
       </div>
 
       <div className="grid gap-6 md:grid-cols-3 mt-8">
-        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
           <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Total Contributions</p>
           <p className="text-3xl font-bold text-white">{fmt(totalMonthlyContribution)}</p>
         </div>
-        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
           <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Total Loan Debt</p>
           <p className="text-3xl font-bold text-white">{fmt(totalLoanDebt)}</p>
         </div>
-        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+        <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
           <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Unpaid Target</p>
           <p className="text-3xl font-bold text-white">{fmt(totalUnpaidAmount)}</p>
         </div>
       </div>
 
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 mt-8">
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 mt-8 shadow-sm">
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
           <h2 className="text-lg font-bold text-white">Pending Approvals</h2>
           <span className="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-md border border-slate-700">{pendingPayments.length} awaiting</span>
@@ -135,7 +135,7 @@ export default async function AdminDashboard({
                     </div>
                     <div className="flex items-center gap-3">
                       <form action={async () => { "use server"; await approvePayment(p.id); }}>
-                        <button className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white hover:bg-indigo-500">Approve</button>
+                        <button className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white hover:bg-indigo-500 transition">Approve</button>
                       </form>
                       <form action={async (formData) => {
                         "use server";
@@ -143,7 +143,7 @@ export default async function AdminDashboard({
                         await rejectPayment(p.id, reason);
                       }} className="flex gap-2">
                         <input name="reason" placeholder="Reason..." required className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-red-500" />
-                        <button className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20">Reject</button>
+                        <button className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20 transition">Reject</button>
                       </form>
                     </div>
                   </div>
@@ -155,12 +155,12 @@ export default async function AdminDashboard({
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 mt-8">
-        <div className="rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm">
           <div className="p-5 border-b border-slate-800"><h2 className="text-lg font-bold text-white">Unpaid (&lt; 350)</h2></div>
           <div className="p-5 space-y-3 max-h-[350px] overflow-y-auto">
             {unpaidUsers.length === 0 ? <p className="text-sm text-slate-400 text-center py-4">All paid up!</p> :
               unpaidUsers.map((u) => (
-                <div key={u.id} className="flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-800">
+                <div key={u.id} className="flex justify-between items-center bg-slate-950 p-4 rounded-xl border border-slate-800">
                   <div>
                     <p className="font-bold text-slate-200 text-sm">{u.fullName}</p>
                     <p className="text-xs text-slate-500">{u.idNumber}</p>
@@ -175,20 +175,20 @@ export default async function AdminDashboard({
           </div>
         </div>
 
-        <div className="rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-sm">
           <div className="p-5 border-b border-slate-800"><h2 className="text-lg font-bold text-white">Active Loans</h2></div>
           <div className="p-5 space-y-3 max-h-[350px] overflow-y-auto">
             {activeLoansList.length === 0 ? <p className="text-sm text-slate-400 text-center py-4">No active loans.</p> :
               activeLoansList.map((l) => (
-                <div key={l.id} className="bg-slate-800/50 p-4 rounded-xl border border-slate-800">
+                <div key={l.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <p className="font-bold text-slate-200 text-sm">{l.userName}</p>
                       <p className="text-xs text-slate-500">ID: {l.idNumber} • {l.type}</p>
                     </div>
-                    <span className="text-[10px] font-bold bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">Due {fmtDate(l.dueDate)}</span>
+                    <span className="text-[10px] font-bold bg-slate-900 text-slate-300 px-2 py-1 rounded border border-slate-800">Due {fmtDate(l.dueDate)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm bg-slate-950 p-2 rounded-lg border border-slate-800">
+                  <div className="flex justify-between items-center text-sm bg-slate-900 p-2 rounded-lg border border-slate-800">
                     <div><span className="text-slate-500 text-xs">Left:</span> <span className="font-bold text-red-400">{fmt(l.remaining)}</span></div>
                     <div><span className="text-slate-500 text-xs">Paid:</span> <span className="font-bold text-indigo-400">{fmt(l.paid)}</span></div>
                   </div>

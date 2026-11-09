@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Bar } from "@/components/Bar";
-import { fmt, fmtDate } from "@/lib/helpers";
+import { fmt } from "@/lib/helpers";
 import Link from "next/link";
 import { connection } from "next/server";
 
@@ -42,7 +42,7 @@ export default async function Dashboard() {
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
   return (
-    <div className="mx-auto max-w-7xl p-4 md:p-8">
+    <div className="mx-auto max-w-7xl p-4 md:p-8 min-h-screen bg-slate-950">
       <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">
@@ -66,7 +66,7 @@ export default async function Dashboard() {
 
       <div className="grid gap-6 md:grid-cols-2 mt-8">
         {user.accounts.map((acc: any) => (
-          <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+          <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-sm">
             <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{acc.name}</p>
             <p className="text-3xl font-bold text-white mt-2">{fmt(acc.balance)}</p>
             <p className="text-xs text-slate-500 mt-1">This month: {fmt(monthlyTotals[acc.name] || 0)}</p>
@@ -74,7 +74,7 @@ export default async function Dashboard() {
         ))}
       </div>
 
-      <div className="rounded-2xl bg-slate-900 border border-indigo-500/30 p-6 mt-6">
+      <div className="rounded-2xl bg-slate-900 border border-indigo-500/30 p-6 mt-6 shadow-[0_0_20px_rgba(99,102,241,0.1)]">
         <p className="text-sm font-semibold text-indigo-400 uppercase tracking-wider">Grand Total</p>
         <p className="text-4xl font-bold text-white mt-1">{fmt(grandTotal)}</p>
       </div>
@@ -89,7 +89,7 @@ export default async function Dashboard() {
               const remaining = loan.amountToPay - loan.paidAmount;
               const paidInstallments = Math.floor(loan.paidAmount / loan.monthlyInstallment);
               return (
-                <div key={loan.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <div key={loan.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                   <div className="flex justify-between mb-2">
                     <span className="font-bold text-white capitalize">{loan.type} Loan</span>
                     <span className="text-red-400 font-bold">{fmt(remaining)} Left</span>
