@@ -13,10 +13,18 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({ where: { idNumber } });
   if (!user) return NextResponse.json({ error: "No account found with that ID." }, { status: 404 });
 
-  // Generate a NEW code every time
+  // CHECK: Does the user already have an active code?
+  const existingOtp = await prisma.otp.findUnique({ where: { userId: user.id } });
+  
+  if (existingOtp && existingOtp.expiresAt > new Date()) {
+    return NextResponse.json({ 
+      error: "You already have an active reset code. Please wait for it to expire before requesting a new one." 
+    }, { status: 400 });
+  }
+
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  // Expiry exactly 1 hour from now
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+  // CHANGED TO 15 MINUTES
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); 
 
   await prisma.otp.upsert({
     where: { userId: user.id },
@@ -27,11 +35,10 @@ export async function POST(req: Request) {
   const setting = await prisma.setting.findUnique({ where: { id: 1 } });
   const adminPhone = setting?.sendMoneyTo || "Admin";
 
-  console.log(`🔐 PASSWORD RESET CODE for ${user.fullName} (${user.idNumber}): ${code}. Expires at ${expiresAt.toLocaleString('en-KE')}`);
-
   return NextResponse.json({ 
     ok: true, 
     adminPhone,
+    expiresAt: expiresAt.toISOString(),
     message: `Please contact Admin at ${adminPhone} to get your 6-digit reset code.`
   });
 }
