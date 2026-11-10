@@ -14,11 +14,9 @@ export default function ForgotPage() {
   const [loading, setLoading] = useState(false);
   const [adminMsg, setAdminMsg] = useState("");
   
-  // Timer State
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
 
-  // Countdown Effect
   useEffect(() => {
     if (!expiresAt) return;
     
@@ -26,8 +24,7 @@ export default function ForgotPage() {
       const remaining = expiresAt - Date.now();
       setTimeLeft(remaining > 0 ? remaining : 0);
     };
-    
-    calculateTime(); // run immediately
+    calculateTime();
     const timer = setInterval(() => {
       const remaining = expiresAt - Date.now();
       setTimeLeft(remaining > 0 ? remaining : 0);
@@ -50,12 +47,16 @@ export default function ForgotPage() {
       const data = await res.json();
       setLoading(false);
       
+      // Even if it's an "existing code", we treat it as a success and go to Step 2
       if (!res.ok) return setMsg({ text: data.error, type: "error" });
       
       setStep(2);
       setAdminMsg(data.message);
       setExpiresAt(new Date(data.expiresAt).getTime());
-      setMsg({ text: "Request sent successfully.", type: "success" });
+      setMsg({ 
+        text: data.isExisting ? "Using your existing active code." : "Request sent successfully.", 
+        type: "success" 
+      });
     } catch (err) {
       setLoading(false);
       setMsg({ text: "Failed to connect to the server.", type: "error" });
@@ -118,7 +119,6 @@ export default function ForgotPage() {
               {adminMsg}
             </div>
 
-            {/* LIVE COUNTDOWN & RESEND */}
             {timeLeft > 0 ? (
               <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 text-center">
                 <p className="text-xs text-slate-400 mb-1">Code expires in</p>
@@ -127,7 +127,6 @@ export default function ForgotPage() {
             ) : (
               <div className="bg-red-500/10 p-3 rounded-xl border border-red-500/30 text-center flex flex-col items-center gap-2">
                 <p className="text-sm font-bold text-red-400">Code expired.</p>
-                {/* RESEND BUTTON */}
                 <button type="button" onClick={sendCode} disabled={loading} className="text-xs font-bold bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600 transition">
                   {loading ? "Requesting..." : "Request New Code"}
                 </button>
