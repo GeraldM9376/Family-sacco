@@ -154,22 +154,29 @@ export default function PayClient({
       {!showOptions && (
         <div className="rounded-3xl bg-slate-900 p-8 border border-slate-800 shadow-xl space-y-6">
           
-          {/* ACCOUNTS SECTION */}
+                    {/* ACCOUNTS SECTION - Explicitly Account 1 then Account 2 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {user.accounts.map((acc: any) => {
-              const isAcc1 = acc.name === "Account 1";
-              return (
-                <div key={acc.id} className="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
-                  <p className="font-bold text-white mb-2">{acc.name} Savings</p>
-                  <input 
-                    type="number" min="0" step="1" placeholder="0" 
-                    value={isAcc1 ? account1Amount : account2Amount} 
-                    onChange={(e) => isAcc1 ? handleAcc1Change(e.target.value) : handleAcc2Change(e.target.value)}
-                    className="w-full rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" 
-                  />
-                </div>
-              );
-            })}
+            {/* Account 1 */}
+            <div className="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
+              <p className="font-bold text-white mb-2">Account 1 Savings</p>
+              <input 
+                type="number" min="0" step="1" placeholder="0" 
+                value={account1Amount} 
+                onChange={(e) => handleAcc1Change(e.target.value)}
+                className="w-full rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" 
+              />
+            </div>
+
+            {/* Account 2 */}
+            <div className="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
+              <p className="font-bold text-white mb-2">Account 2 Savings</p>
+              <input 
+                type="number" min="0" step="1" placeholder="0" 
+                value={account2Amount} 
+                onChange={(e) => handleAcc2Change(e.target.value)}
+                className="w-full rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" 
+              />
+            </div>
           </div>
 
           {/* NORMAL LOAN */}
