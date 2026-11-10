@@ -30,7 +30,6 @@ export default async function Dashboard() {
   const greeting = eatHour < 12 ? "Good morning" : eatHour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user.fullName.split(" ")[0];
 
-  // Get exact current month name
   const currentMonthName = now.toLocaleString('default', { month: 'long' });
 
   // --- Status Banner Logic ---
@@ -77,7 +76,6 @@ export default async function Dashboard() {
 
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
-  // Calculate exact current month totals
   const thisMonthPayments = user.payments.filter((p: any) => {
     const pDate = new Date(p.paidOn);
     return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
@@ -241,7 +239,7 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      {/* Active Loans */}
+      {/* Active Loans with Segmented Progress */}
       <div>
         <h2 className="text-lg font-bold text-white mb-4">Active Loans</h2>
         {user.loans.length === 0 ? (
@@ -249,31 +247,68 @@ export default async function Dashboard() {
             <p className="text-sm text-slate-400">You have no active loans.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {user.loans.map((loan: any) => {
               const remaining = loan.amountToPay - loan.paidAmount;
               const paidInstallments = Math.floor(loan.paidAmount / loan.monthlyInstallment);
+              
+              // Generate an array of month names starting from the issued date
+              const issuedDate = new Date(loan.issuedOn);
+              const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+              const monthsList = [];
+              for (let i = 0; i < loan.periodMonths; i++) {
+                const d = new Date(issuedDate);
+                d.setMonth(d.getMonth() + i);
+                monthsList.push(monthNames[d.getMonth()]);
+              }
+
               return (
                 <div key={loan.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-6">
                     <div>
                       <span className="font-bold text-white capitalize">{loan.type} Loan</span>
-                      <p className="text-xs text-slate-500 mt-1">Account: {user.accounts.find((a: any) => a.id === loan.accountId)?.name}</p>
+                      <p className="text-xs text-slate-500 mt-1">Monthly Installment: <span className="text-white">{fmt(loan.monthlyInstallment)}</span></p>
+                      <p className="text-xs text-slate-500">Account: {user.accounts.find((a: any) => a.id === loan.accountId)?.name}</p>
                     </div>
                     <span className="text-sm font-bold text-red-400">{fmt(remaining)} Left</span>
                   </div>
-                  <div className="space-y-3">
+
+                  <div className="space-y-4">
+                    {/* Total Repayment Progress */}
                     <div>
                       <div className="flex justify-between text-xs text-slate-400 mb-1">
-                        <span>Total Repayment</span><span>{Math.round((loan.paidAmount / loan.amountToPay) * 100)}%</span>
+                        <span>Total Repayment</span>
+                        <span>{Math.round((loan.paidAmount / loan.amountToPay) * 100)}%</span>
                       </div>
                       <Bar pct={(loan.paidAmount / loan.amountToPay) * 100} color="indigo" />
                     </div>
+
+                    {/* Segmented Monthly Progress Bar */}
                     <div>
-                      <div className="flex justify-between text-xs text-slate-400 mb-1">
-                        <span>Installments ({paidInstallments}/{loan.periodMonths})</span><span>{Math.round((paidInstallments / loan.periodMonths) * 100)}%</span>
+                      <div className="flex justify-between text-xs text-slate-400 mb-2 mt-4">
+                        <span>Installments ({paidInstallments} of {loan.periodMonths} months paid)</span>
+                        <span>{Math.round((paidInstallments / loan.periodMonths) * 100)}%</span>
                       </div>
-                      <Bar pct={(paidInstallments / loan.periodMonths) * 100} color="emerald" />
+                      
+                      <div className="flex gap-1 w-full h-8">
+                        {monthsList.map((m, index) => {
+                          const isPaid = index < paidInstallments;
+                          const activeColor = index % 2 === 0 ? "bg-indigo-500" : "bg-emerald-500";
+                          const inactiveColor = "bg-slate-800";
+
+                          return (
+                            <div 
+                              key={index} 
+                              className={`flex-1 rounded-sm flex items-center justify-center transition-all duration-500 ${isPaid ? activeColor : inactiveColor}`}
+                              title={`${m}: ${isPaid ? "Paid" : "Pending"}`}
+                            >
+                              <span className={`text-[10px] font-bold uppercase ${isPaid ? "text-white" : "text-slate-500"}`}>
+                                {m}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
