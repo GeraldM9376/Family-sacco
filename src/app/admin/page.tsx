@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { fmt, fmtDate } from "@/lib/helpers";
 import { approvePayment, rejectPayment } from "./actions";
 import { connection } from "next/server";
+import OtpList from "./OtpList";
 
 export default async function AdminDashboard({
   searchParams,
@@ -91,36 +92,8 @@ export default async function AdminDashboard({
         </form>
       </div>
 
-      {/* Active Password Reset Codes */}
-      <div className="rounded-2xl bg-indigo-500/10 border border-indigo-500/30 overflow-hidden">
-        <div className="p-5 border-b border-indigo-500/20 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-indigo-300">Active Password Reset Codes</h2>
-          <span className="bg-indigo-500/20 text-indigo-300 text-xs px-3 py-1 rounded-md border border-indigo-500/30">{activeOtps.length} active</span>
-        </div>
-        <div className="p-5">
-          {activeOtps.length === 0 ? (
-            <p className="text-slate-400 text-sm">No active reset codes. When a user requests one, it will appear here for 1 hour.</p>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {activeOtps.map((otp: any) => {
-                const minutesLeft = Math.floor((new Date(otp.expiresAt).getTime() - Date.now()) / 60000);
-                return (
-                  <div key={otp.id} className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-indigo-500/20">
-                    <div>
-                      <p className="font-bold text-white">{otp.user.fullName}</p>
-                      <p className="text-xs text-slate-400 font-mono">ID: {otp.user.idNumber}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-mono font-extrabold text-indigo-300 tracking-widest">{otp.code}</p>
-                      <p className="text-[10px] text-amber-400 font-bold mt-1">Expires in {minutesLeft} mins</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* LIVE Active Password Reset Codes */}
+      <OtpList initialOtps={activeOtps} />
 
       {/* Master Metrics */}
       <div className="grid gap-6 md:grid-cols-3">
