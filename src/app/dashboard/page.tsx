@@ -48,11 +48,16 @@ export default async function Dashboard() {
     statusColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
   }
 
-  // --- Monthly Breakdown Logic ---
+  // --- Monthly Breakdown Logic (SAVINGS ONLY) ---
   const monthlyData: Record<string, { account1: number, account2: number, total: number }> = {};
-  let allTimeTotal = 0;
 
   user.payments.forEach((p: any) => {
+    let breakdown: any = {};
+    try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
+
+    // Skip if no savings at all (loans only)
+    if (!breakdown.account1 && !breakdown.account2) return;
+
     const pDate = new Date(p.paidOn);
     const monthKey = `${pDate.toLocaleString('default', { month: 'long' })} ${pDate.getFullYear()}`;
     
@@ -60,12 +65,14 @@ export default async function Dashboard() {
       monthlyData[monthKey] = { account1: 0, account2: 0, total: 0 };
     }
 
-    const acc = user.accounts.find((a: any) => a.id === p.accountId);
-    if (acc) {
-      if (acc.name === "Account 1") monthlyData[monthKey].account1 += p.totalAmount;
-      if (acc.name === "Account 2") monthlyData[monthKey].account2 += p.totalAmount;
-      monthlyData[monthKey].total += p.totalAmount;
-      allTimeTotal += p.totalAmount;
+    // Only add savings amounts
+    if (breakdown.account1 > 0) {
+      monthlyData[monthKey].account1 += Number(breakdown.account1);
+      monthlyData[monthKey].total += Number(breakdown.account1);
+    }
+    if (breakdown.account2 > 0) {
+      monthlyData[monthKey].account2 += Number(breakdown.account2);
+      monthlyData[monthKey].total += Number(breakdown.account2);
     }
   });
 
@@ -73,6 +80,9 @@ export default async function Dashboard() {
     month: key,
     ...monthlyData[key],
   })).sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+
+  // Calculate All-Time Total (Only Savings)
+  const allTimeTotal = monthlyList.reduce((sum, m) => sum + m.total, 0);
 
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
@@ -83,9 +93,10 @@ export default async function Dashboard() {
   
   const thisMonthTotals = { account1: 0, account2: 0 };
   thisMonthPayments.forEach((p: any) => {
-    const acc = user.accounts.find((a: any) => a.id === p.accountId);
-    if (acc?.name === "Account 1") thisMonthTotals.account1 += p.totalAmount;
-    if (acc?.name === "Account 2") thisMonthTotals.account2 += p.totalAmount;
+    let breakdown: any = {};
+    try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
+    if (breakdown.account1 > 0) thisMonthTotals.account1 += Number(breakdown.account1);
+    if (breakdown.account2 > 0) thisMonthTotals.account2 += Number(breakdown.account2);
   });
 
   const totalSavings = user.accounts.reduce((sum, a) => sum + a.balance, 0);
@@ -167,7 +178,7 @@ export default async function Dashboard() {
         ))}
       </div>
 
-      {/* Grand Total + Savings Progress with Dynamic Color */}
+      {/* Grand Total + Savings Progress */}
       <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
@@ -179,19 +190,16 @@ export default async function Dashboard() {
               <span>Savings Progress (Target: 350)</span>
               <span>{Math.round(savingsPct)}%</span>
             </div>
-            <Bar 
-              pct={savingsPct} 
-              color={savingsPct < 30 ? "red" : savingsPct < 70 ? "amber" : "emerald"} 
-            />
+            <Bar pct={savingsPct} color={savingsPct < 30 ? "red" : savingsPct < 70 ? "amber" : "emerald"} />
           </div>
         </div>
       </div>
 
-      {/* MONTHLY BREAKDOWN TABLE */}
+      {/* MONTHLY BREAKDOWN TABLE (SAVINGS ONLY) */}
       <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
         <div className="p-6 border-b border-slate-800">
-          <h2 className="text-lg font-bold text-white">Monthly Payments Breakdown</h2>
-          <p className="text-xs text-slate-500 mt-1">Every month's contributions per account.</p>
+          <h2 className="text-lg font-bold text-white">Monthly Savings Breakdown</h2>
+          <p className="text-xs text-slate-500 mt-1">Every month's savings contributions per account.</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -206,7 +214,7 @@ export default async function Dashboard() {
             <tbody className="divide-y divide-slate-800">
               {monthlyList.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-slate-500">No payments made yet.</td>
+                  <td colSpan={4} className="p-8 text-center text-slate-500">No savings payments made yet.</td>
                 </tr>
               ) : (
                 monthlyList.map((m) => (
@@ -221,7 +229,7 @@ export default async function Dashboard() {
             </tbody>
             <tfoot className="bg-slate-950 border-t border-slate-800">
               <tr>
-                <td className="p-5 font-bold text-white">All-Time Total</td>
+                <td className="p-5 font-bold text-white">All-Time Savings Total</td>
                 <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account1, 0))}</td>
                 <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account2, 0))}</td>
                 <td className="p-5 text-right font-bold text-indigo-400">{fmt(allTimeTotal)}</td>
@@ -274,7 +282,6 @@ export default async function Dashboard() {
                       <Bar pct={progressPct} color={barColor as any} />
                     </div>
 
-                    {/* Segmented Monthly Progress with Smooth Fill */}
                     <div>
                       <div className="flex justify-between text-xs text-slate-400 mb-2 mt-4">
                         <span>Monthly Installments</span>
@@ -282,11 +289,9 @@ export default async function Dashboard() {
                       
                       <div className="flex gap-1 w-full h-8">
                         {monthsList.map((m, index) => {
-                          // How much has been paid for this specific month?
                           const amountPaidTowardsThisMonth = Math.max(0, Math.min(loan.monthlyInstallment, loan.paidAmount - (index * loan.monthlyInstallment)));
                           const monthFillPct = (amountPaidTowardsThisMonth / loan.monthlyInstallment) * 100;
                           
-                          // Alternating colors for the fill
                           const fillColor = index % 2 === 0 ? "bg-indigo-500" : "bg-emerald-500";
 
                           return (
@@ -295,12 +300,10 @@ export default async function Dashboard() {
                               className="flex-1 rounded-sm relative bg-slate-800 overflow-hidden"
                               title={`${m}: ${fmt(amountPaidTowardsThisMonth)} / ${fmt(loan.monthlyInstallment)}`}
                             >
-                              {/* The colored fill that grows dynamically */}
                               <div 
                                 className={`absolute top-0 left-0 h-full ${fillColor} transition-all duration-500`}
                                 style={{ width: `${monthFillPct}%` }}
                               />
-                              {/* The Month Label (sits above the fill) */}
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <span className={`text-[10px] font-bold uppercase ${monthFillPct >= 50 ? "text-white" : "text-slate-400"}`}>
                                   {m}
