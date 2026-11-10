@@ -191,68 +191,6 @@ export async function adminRecordPayment(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-// Helper to distribute payment across user's loans
-async function distributeLoanPayment(tx: any, userId: string, type: string, amountPaid: number) {
-  let remaining = amountPaid;
-  const activeLoans = await tx.loan.findMany({
-    where: { userId, type, status: "unpaid" },
-    orderBy: { dueDate: "asc" },
-  });
-
-  for (const loan of activeLoans) {
-    if (remaining <= 0) break;
-    const loanRemaining = loan.amountToPay - loan.paidAmount;
-    const paymentForThisLoan = Math.min(loanRemaining, remaining);
-    
-    const newPaidAmount = loan.paidAmount + paymentForThisLoan;
-    const isFullyPaid = newPaidAmount >= loan.amountToPay;
-
-    await tx.loan.update({
-      where: { id: loan.id },
-      data: {
-        paidAmount: newPaidAmount,
-        status: isFullyPaid ? "paid" : "unpaid",
-      },
-    });
-
-    remaining -= paymentForThisLoan;
-  }
-}
-export async function approveWithdrawal(withdrawalId: string) {
-  const w = await prisma.withdrawal.findUnique({
-    where: { id: withdrawalId },
-    include: { user: { include: { accounts: true } } }
-  });
-  if (!w || w.status !== "pending") return;
-
-  const acc1 = w.user.accounts.find(a => a.name === "Account 1");
-  const acc2 = w.user.accounts.find(a => a.name === "Account 2");
-
-  await prisma.$transaction(async (tx: any) => {
-    await tx.withdrawal.update({
-      where: { id: withdrawalId },
-      data: { status: "approved" },
-    });
-
-    if (w.account1Amt > 0 && acc1) {
-      await tx.account.update({
-        where: { id: acc1.id },
-        data: { balance: { decrement: w.account1Amt } },
-      });
-    }
-
-    if (w.account2Amt > 0 && acc2) {
-      await tx.account.update({
-        where: { id: acc2.id },
-        data: { balance: { decrement: w.account2Amt } },
-      });
-    }
-  });
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/withdrawals");
-  revalidatePath("/dashboard");
-}
 export async function approveWithdrawal(withdrawalId: string) {
   const w = await prisma.withdrawal.findUnique({
     where: { id: withdrawalId },
@@ -290,4 +228,32 @@ export async function approveWithdrawal(withdrawalId: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/withdrawals");
   revalidatePath("/dashboard");
+}
+
+// Helper to distribute payment across user's loans
+async function distributeLoanPayment(tx: any, userId: string, type: string, amountPaid: number) {
+  let remaining = amountPaid;
+  const activeLoans = await tx.loan.findMany({
+    where: { userId, type, status: "unpaid" },
+    orderBy: { dueDate: "asc" },
+  });
+
+  for (const loan of activeLoans) {
+    if (remaining <= 0) break;
+    const loanRemaining = loan.amountToPay - loan.paidAmount;
+    const paymentForThisLoan = Math.min(loanRemaining, remaining);
+    
+    const newPaidAmount = loan.paidAmount + paymentForThisLoan;
+    const isFullyPaid = newPaidAmount >= loan.amountToPay;
+
+    await tx.loan.update({
+      where: { id: loan.id },
+      data: {
+        paidAmount: newPaidAmount,
+        status: isFullyPaid ? "paid" : "unpaid",
+      },
+    });
+
+    remaining -= paymentForThisLoan;
+  }
 }
