@@ -10,23 +10,34 @@ export default function WithdrawPage() {
   
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [fetching, setFetching] = useState(true);
+  
+  // NEW: Fetch user's savings progress
+  const [currentMonthTotal, setCurrentMonthTotal] = useState(0);
 
-  const fetchWithdrawals = async () => {
+  const fetchData = async () => {
     try {
+      // Fetch withdrawal history
       const res = await fetch("/api/dashboard/withdraw");
       if (res.ok) {
         const data = await res.json();
         setWithdrawals(data);
       }
+
+      // Fetch current month's savings progress
+      const dashRes = await fetch("/api/dashboard/current-savings");
+      if (dashRes.ok) {
+        const dashData = await dashRes.json();
+        setCurrentMonthTotal(dashData.total || 0);
+      }
     } catch (e) {
-      console.error("Failed to fetch withdrawals", e);
+      console.error("Failed to fetch data", e);
     } finally {
       setFetching(false);
     }
   };
 
   useEffect(() => {
-    fetchWithdrawals();
+    fetchData();
   }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -67,7 +78,7 @@ export default function WithdrawPage() {
       
       setMsg("Withdrawal request submitted. Awaiting Admin approval.");
       (e.target as HTMLFormElement).reset();
-      fetchWithdrawals();
+      fetchData();
       setLoading(false);
     } catch (error: any) {
       setErr("Something went wrong.");
@@ -77,10 +88,14 @@ export default function WithdrawPage() {
 
   const pending = withdrawals.filter(w => w.status === "pending");
   const history = withdrawals.filter(w => w.status !== "pending");
+  
+  const savingsPct = Math.min(100, (currentMonthTotal / 350) * 100);
+  const savingsColor = savingsPct < 30 ? "bg-red-500" : savingsPct < 70 ? "bg-amber-500" : "bg-emerald-500";
 
   return (
     <div className="mx-auto max-w-2xl p-4 md:p-10 mt-10 space-y-8">
       
+      {/* PENDING WITHDRAWALS */}
       {pending.length > 0 && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-6">
           <h2 className="text-lg font-bold text-amber-300 mb-4 flex items-center gap-2">
@@ -96,7 +111,6 @@ export default function WithdrawPage() {
                     {w.account2Amt > 0 && `| Acc 2: ${fmt(w.account2Amt)}`}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">Via: {w.methodDetails}</p>
-                  <p className="text-[10px] text-slate-500">Requested: {fmtDate(w.createdAt)}</p>
                 </div>
                 <span className="text-xs font-bold text-amber-400 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30">
                   Awaiting Admin
@@ -107,9 +121,21 @@ export default function WithdrawPage() {
         </div>
       )}
 
+      {/* WITHDRAWAL FORM */}
       <div className="rounded-2xl bg-slate-900 p-8 border border-slate-800 shadow-xl">
         <h1 className="mb-2 text-2xl font-bold text-white">Withdraw Contribution</h1>
-        <p className="text-sm text-slate-400 mb-8">Enter amounts and choose how you want to receive the money.</p>
+        <p className="text-sm text-slate-400 mb-6">Enter amounts and choose how you want to receive the money.</p>
+
+        {/* Current Month Progress Visual */}
+        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6">
+          <div className="flex justify-between text-xs text-slate-400 mb-2">
+            <span>This Month's Savings Progress (Target: 350)</span>
+            <span className="font-bold text-white">{Math.round(savingsPct)}%</span>
+          </div>
+          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+            <div className={`h-full ${savingsColor} transition-all duration-500`} style={{ width: `${savingsPct}%` }} />
+          </div>
+        </div>
 
         {msg && <div className="bg-emerald-500/20 text-emerald-400 p-3 rounded-lg mb-4 text-sm font-bold border border-emerald-500/30">{msg}</div>}
 
@@ -167,6 +193,7 @@ export default function WithdrawPage() {
         </form>
       </div>
 
+      {/* WITHDRAWAL HISTORY */}
       <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
         <div className="p-6 border-b border-slate-800">
           <h2 className="text-lg font-bold text-white">Withdrawal History</h2>
@@ -186,8 +213,6 @@ export default function WithdrawPage() {
                     {w.account2Amt > 0 && `| Acc 2: ${fmt(w.account2Amt)}`}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">{w.methodDetails}</p>
-                  
-                  {/* Show Request Date & Approval Date */}
                   <p className="text-[10px] text-slate-500 mt-1">
                     Requested: {fmtDate(w.createdAt)}
                     {w.approvedAt && ` • Approved: ${fmtDate(w.approvedAt)}`}

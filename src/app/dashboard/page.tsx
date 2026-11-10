@@ -16,6 +16,7 @@ export default async function Dashboard() {
       accounts: true,
       payments: { where: { status: "approved" }, orderBy: { paidOn: "desc" } },
       loans: { where: { status: "unpaid" }, orderBy: { dueDate: "asc" } },
+      withdrawals: { where: { status: "approved" } },
     },
   });
 
@@ -31,6 +32,7 @@ export default async function Dashboard() {
   const firstName = user.fullName.split(" ")[0];
 
   const currentMonthName = now.toLocaleString('default', { month: 'long' });
+  const currentYear = now.getFullYear();
 
   // --- Status Banner Logic ---
   const hasActiveLoans = user.loans.length > 0;
@@ -55,7 +57,6 @@ export default async function Dashboard() {
     let breakdown: any = {};
     try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
 
-    // Skip if no savings at all (loans only)
     if (!breakdown.account1 && !breakdown.account2) return;
 
     const pDate = new Date(p.paidOn);
@@ -65,7 +66,6 @@ export default async function Dashboard() {
       monthlyData[monthKey] = { account1: 0, account2: 0, total: 0 };
     }
 
-    // Only add savings amounts
     if (breakdown.account1 > 0) {
       monthlyData[monthKey].account1 += Number(breakdown.account1);
       monthlyData[monthKey].total += Number(breakdown.account1);
@@ -81,11 +81,7 @@ export default async function Dashboard() {
     ...monthlyData[key],
   })).sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
 
-  // Calculate All-Time Total (Only Savings)
-  const allTimeTotal = monthlyList.reduce((sum, m) => sum + m.total, 0);
-
-  const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
-
+  // --- This Month's Calculations (Resets Monthly) ---
   const thisMonthPayments = user.payments.filter((p: any) => {
     const pDate = new Date(p.paidOn);
     return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
@@ -99,12 +95,20 @@ export default async function Dashboard() {
     if (breakdown.account2 > 0) thisMonthTotals.account2 += Number(breakdown.account2);
   });
 
-  const totalSavings = user.accounts.reduce((sum, a) => sum + a.balance, 0);
-  const savingsPct = Math.min(100, (totalSavings / 350) * 100);
+  const thisMonthGrandTotal = thisMonthTotals.account1 + thisMonthTotals.account2;
+  const savingsPct = Math.min(100, (thisMonthGrandTotal / 350) * 100);
+
+  // --- All-Time Calculations ---
+  const totalSavingsDeposited = monthlyList.reduce((sum, m) => sum + m.total, 0);
+  const totalWithdrawn = user.withdrawals.reduce((sum, w) => sum + w.totalAmount, 0);
+  const allTimeSavings = totalSavingsDeposited - totalWithdrawn;
+
+  // Grand Total = Current Balances (which already had withdrawals deducted by Admin actions)
+  const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-10 space-y-8">
-            {/* Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-8">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight">
@@ -120,7 +124,6 @@ export default async function Dashboard() {
           </div>
         </div>
         
-        {/* NEW: Withdraw and Payment buttons */}
         <div className="flex gap-3">
           <Link href="/dashboard/withdraw" className="rounded-lg bg-slate-800 border border-slate-700 px-6 py-2.5 font-semibold text-white hover:bg-slate-700 transition">
             Withdraw
@@ -137,52 +140,23 @@ export default async function Dashboard() {
         <p className="font-medium">{statusMessage}</p>
       </div>
 
-      {/* Request Loan Banner */}
-      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-        <div>
-          <h3 className="font-bold text-indigo-300 text-lg mb-1">Need a Loan?</h3>
-          <p className="text-sm text-indigo-400/80 mb-4">
-            Loan requests are processed by the Admin. Contact them to apply.
-          </p>
-          
-          {adminPhone && (
-            <div className="bg-slate-900/50 border border-slate-700/50 p-3 rounded-lg inline-block">
-              <p className="text-xs text-slate-400 mb-1">Admin Contact Number:</p>
-              <p className="text-2xl font-mono font-bold text-white tracking-wider">{adminPhone}</p>
-            </div>
-          )}
-        </div>
-        
-        {adminPhone ? (
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <a href={`tel:${adminPhone}`} className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2">
-              <span className="text-lg">📞</span> Call
-            </a>
-            <a href={`sms:${adminPhone}?body=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`} className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2">
-              <span className="text-lg">💬</span> Text
-            </a>
-            <a href={`https://wa.me/${adminPhone.replace(/\D/g, '')}?text=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-emerald-500 transition flex items-center justify-center gap-2">
-              <span className="text-lg">💚</span> WhatsApp
-            </a>
-          </div>
-        ) : (
-          <div className="bg-slate-800 text-slate-400 rounded-lg px-4 py-3 text-sm font-bold border border-slate-700 text-center">
-            Admin phone number not configured in Settings
-          </div>
-        )}
-      </div>
-
-      {/* Account Balances */}
+      {/* Account Balances (Current Month) */}
       <div className="grid gap-6 md:grid-cols-2">
-        {user.accounts.map((acc: any) => (
-          <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{acc.name} Balance</p>
-            <p className="text-3xl font-bold text-white mt-2">{fmt(acc.balance)}</p>
-            <p className="text-xs text-slate-500 mt-1">
-              {currentMonthName}: {fmt(thisMonthTotals[acc.name === "Account 1" ? "account1" : "account2"])}
-            </p>
-          </div>
-        ))}
+        {user.accounts.map((acc: any) => {
+          const monthAmount = thisMonthTotals[acc.name === "Account 1" ? "account1" : "account2"];
+          return (
+            <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{acc.name} Balance</p>
+              <p className="text-4xl font-extrabold text-white mt-2 mb-4">{fmt(acc.balance)}</p>
+              
+              {/* Detailed Month Badge */}
+              <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-3 flex justify-between items-center">
+                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{currentMonthName} {currentYear}</span>
+                <span className="text-sm font-bold text-white">{fmt(monthAmount)}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Grand Total + Savings Progress */}
@@ -194,7 +168,7 @@ export default async function Dashboard() {
           </div>
           <div className="w-full md:w-1/2">
             <div className="flex justify-between text-xs text-slate-400 mb-2">
-              <span>Savings Progress (Target: 350)</span>
+              <span>{currentMonthName} Savings Progress (Target: 350)</span>
               <span>{Math.round(savingsPct)}%</span>
             </div>
             <Bar pct={savingsPct} color={savingsPct < 30 ? "red" : savingsPct < 70 ? "amber" : "emerald"} />
@@ -239,14 +213,14 @@ export default async function Dashboard() {
                 <td className="p-5 font-bold text-white">All-Time Savings Total</td>
                 <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account1, 0))}</td>
                 <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account2, 0))}</td>
-                <td className="p-5 text-right font-bold text-indigo-400">{fmt(allTimeTotal)}</td>
+                <td className="p-5 text-right font-bold text-indigo-400">{fmt(allTimeSavings)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
 
-      {/* Active Loans with Smooth Partial Monthly Progress */}
+      {/* Active Loans */}
       <div>
         <h2 className="text-lg font-bold text-white mb-4">Active Loans</h2>
         {user.loans.length === 0 ? (
@@ -275,7 +249,6 @@ export default async function Dashboard() {
                     <div>
                       <span className="font-bold text-white capitalize">{loan.type} Loan</span>
                       <p className="text-xs text-slate-500 mt-1">Monthly Installment: <span className="text-white">{fmt(loan.monthlyInstallment)}</span></p>
-                      <p className="text-xs text-slate-500">Account: {user.accounts.find((a: any) => a.id === loan.accountId)?.name}</p>
                     </div>
                     <span className="text-sm font-bold text-red-400">{fmt(remaining)} Left</span>
                   </div>
