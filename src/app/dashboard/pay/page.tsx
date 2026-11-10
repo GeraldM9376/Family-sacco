@@ -16,10 +16,23 @@ export default async function PayPage() {
 
   if (!user) return null;
 
-  // Fetch active loans for this user
+  // Fetch active loans AND pending payments
   const loans = await prisma.loan.findMany({
     where: { userId: user.id, status: "unpaid" },
   });
 
-  return <PayClient user={user} setting={setting || {}} loans={loans} />;
+  const pendingPayments = await prisma.payment.findMany({
+    where: { userId: user.id, status: "pending" },
+    orderBy: { createdAt: "desc" },
+    include: { account: true },
+  });
+
+  return (
+    <PayClient 
+      user={user} 
+      setting={setting || {}} 
+      loans={loans} 
+      pendingPayments={pendingPayments} 
+    />
+  );
 }

@@ -2,8 +2,19 @@
 import { useState } from "react";
 import { submitBulkPayment } from "./actions";
 import { useRouter } from "next/navigation";
+import { fmt, fmtDate } from "@/lib/helpers";
 
-export default function PayClient({ user, setting, loans }: { user: any, setting: any, loans: any[] }) {
+export default function PayClient({ 
+  user, 
+  setting, 
+  loans, 
+  pendingPayments 
+}: { 
+  user: any, 
+  setting: any, 
+  loans: any[], 
+  pendingPayments: any[] 
+}) {
   const router = useRouter();
   const [selectedAccount, setSelectedAccount] = useState<string>("");
   const [amounts, setAmounts] = useState({ savings: "", normal: "", emergency: "" });
@@ -18,9 +29,9 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
     setAmounts({ ...amounts, [field]: cleanValue });
   };
 
-  const accountLoans = loans.filter((l: any) => l.accountId === selectedAccount);
-  const normalDebtForAccount = accountLoans.filter((l: any) => l.type === "normal").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
-  const emergencyDebtForAccount = accountLoans.filter((l: any) => l.type === "emergency").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  // Loans are tied to the User, not the account
+  const normalDebt = loans.filter((l: any) => l.type === "normal").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  const emergencyDebt = loans.filter((l: any) => l.type === "emergency").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
 
   const calculateTotal = () => {
     const s = Number(amounts.savings) || 0;
@@ -30,8 +41,13 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
     if (s < 0 || n < 0 || e < 0) return setErr("Amounts cannot be negative.");
     const sum = s + n + e;
     if (sum <= 0) return setErr("Please enter at least one amount.");
-    if (n > normalDebtForAccount) return setErr(`You cannot pay more than ${normalDebtForAccount} for normal loans in this account.`);
-    if (e > emergencyDebtForAccount) return setErr(`You cannot pay more than ${emergencyDebtForAccount} for emergency loans in this account.`);
+    
+    if (s > 0 && !selectedAccount) {
+      return setErr("Please select an account to deposit your savings into.");
+    }
+
+    if (n > normalDebt) return setErr(`You cannot pay more than ${normalDebt} for normal loans.`);
+    if (e > emergencyDebt) return setErr(`You cannot pay more than ${emergencyDebt} for emergency loans.`);
     
     setErr("");
     setTotal(sum);
@@ -46,7 +62,7 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
     setErr("");
     
     const fd = new FormData(e.currentTarget);
-    fd.append("accountId", selectedAccount);
+    fd.append("accountId", selectedAccount || user.accounts[0]?.id || "");
     fd.append("totalAmount", total?.toString() || "0");
     fd.append("savingsAmt", amounts.savings || "0");
     fd.append("normalAmt", amounts.normal || "0");
@@ -55,74 +71,91 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
 
     try {
       await submitBulkPayment(fd);
-      window.location.href = "/dashboard?msg=Payment submitted for approval";
+      window.location.href = "/dashboard/pay?msg=Payment submitted for approval";
     } catch (error: any) {
       setErr(error.message || "Something went wrong.");
       setLoading(false); 
     }
   }
 
-  if (!selectedAccount) {
-    return (
-      <div className="mx-auto max-w-lg p-4 md:p-10 mt-10">
-        <h1 className="text-3xl font-extrabold text-white mb-8 text-center">Select Account</h1>
-        <div className="space-y-4">
-          {user.accounts.map((acc: any) => (
-            <button
-              key={acc.id}
-              onClick={() => setSelectedAccount(acc.id)}
-              className="w-full p-6 rounded-2xl border border-slate-800 bg-slate-900 text-left hover:border-indigo-500 transition shadow-lg group"
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-white text-xl group-hover:text-indigo-400 transition">{acc.name}</p>
-                  <p className="text-sm text-slate-400 mt-1">Balance: {acc.balance.toLocaleString()}</p>
-                </div>
-                <span className="text-slate-500 text-2xl group-hover:text-indigo-400 transition">→</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-3xl p-4 md:p-10 min-h-screen">
       <div className="text-center mb-10">
         <h1 className="text-3xl font-extrabold text-white">Make a Payment</h1>
-        <p className="text-slate-400 mt-2">
-          Paying to: <span className="text-indigo-400 font-bold">{user.accounts.find((a: any) => a.id === selectedAccount)?.name}</span>
-        </p>
-        <button onClick={() => setSelectedAccount("")} className="text-xs text-slate-500 underline mt-2 hover:text-white">Change Account</button>
       </div>
 
+      {/* PENDING APPROVALS SECTION */}
+      {pendingPayments.length > 0 && (
+        <div className="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/10 p-6">
+          <h3 className="font-bold text-amber-300 text-lg mb-4 flex items-center gap-2">
+            <span>⏳</span> Pending Approvals ({pendingPayments.length})
+          </h3>
+          <div className="space-y-3">
+            {pendingPayments.map((p: any) => {
+              let breakdown: any = {};
+              try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
+              return (
+                <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+                  <div>
+                    <p className="font-bold text-white">{fmt(p.totalAmount)} <span className="text-xs font-normal text-slate-400">to {p.account?.name}</span></p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {breakdown.savings > 0 && `Savings: ${fmt(breakdown.savings)} `}
+                      {breakdown.normal > 0 && `| Normal: ${fmt(breakdown.normal)} `}
+                      {breakdown.emergency > 0 && `| Emergency: ${fmt(breakdown.emergency)}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-amber-400 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30">
+                      Awaiting Admin
+                    </span>
+                    <p className="text-[10px] text-slate-500 mt-1">{fmtDate(p.paidOn)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {!showOptions && (
-        <div className="rounded-3xl bg-slate-900 p-8 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-            <div>
-              <p className="font-bold text-white">Monthly Savings</p>
-              <p className="text-xs text-slate-400">Min: KES 350</p>
+        <div className="rounded-3xl bg-slate-900 p-8 border border-slate-800 shadow-xl space-y-6">
+          
+          {/* SAVINGS SECTION */}
+          <div className="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
+            <p className="font-bold text-white mb-2">Savings Deposit</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex flex-wrap gap-2">
+                {user.accounts.map((acc: any) => (
+                  <button
+                    key={acc.id}
+                    onClick={() => setSelectedAccount(acc.id)}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold border transition ${selectedAccount === acc.id ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-900 border-slate-700 text-slate-400 hover:text-white"}`}
+                  >
+                    {acc.name}
+                  </button>
+                ))}
+              </div>
+              <input type="number" min="0" step="1" placeholder="0" value={amounts.savings} onChange={(e) => handleAmountChange("savings", e.target.value)}
+                className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
             </div>
-            <input type="number" min="0" step="1" placeholder="0" value={amounts.savings} onChange={(e) => handleAmountChange("savings", e.target.value)}
-              className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
           </div>
 
-          <div className={`flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-700 ${normalDebtForAccount <= 0 ? 'opacity-50' : ''}`}>
+          {/* LOANS SECTION */}
+          <div className="flex justify-between items-center bg-slate-800/50 p-5 rounded-xl border border-slate-700">
             <div>
-              <p className="font-bold text-white">Normal Loan</p>
-              <p className="text-xs text-red-400">Owed: KES {normalDebtForAccount}</p>
+              <p className="font-bold text-white">Normal Loan Repayment</p>
+              <p className="text-xs text-red-400">Owed: KES {normalDebt}</p>
             </div>
-            <input type="number" min="0" step="1" disabled={normalDebtForAccount <= 0} placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
+            <input type="number" min="0" step="1" disabled={normalDebt <= 0} placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
               className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
           </div>
 
-          <div className={`flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-slate-700 ${emergencyDebtForAccount <= 0 ? 'opacity-50' : ''}`}>
+          <div className="flex justify-between items-center bg-slate-800/50 p-5 rounded-xl border border-slate-700">
             <div>
-              <p className="font-bold text-white">Emergency Loan</p>
-              <p className="text-xs text-red-400">Owed: KES {emergencyDebtForAccount}</p>
+              <p className="font-bold text-white">Emergency Loan Repayment</p>
+              <p className="text-xs text-red-400">Owed: KES {emergencyDebt}</p>
             </div>
-            <input type="number" min="0" step="1" disabled={emergencyDebtForAccount <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
+            <input type="number" min="0" step="1" disabled={emergencyDebt <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
               className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
           </div>
 
@@ -150,28 +183,25 @@ export default function PayClient({ user, setting, loans }: { user: any, setting
             </button>
             <button onClick={() => setMethod("admin")} className={`rounded-2xl border-2 p-6 text-center transition ${method === "admin" ? "border-indigo-500 bg-indigo-500/10" : "border-slate-700 hover:border-indigo-500/50"}`}>
               <span className="block text-3xl mb-2">👨‍💼</span>
-              <span className="font-bold text-white">Admin Pays for Me</span>
+              <span className="font-bold text-white">Admin Pays</span>
             </button>
           </div>
 
           {method && (
             <form onSubmit={handleSubmit} className="space-y-4 border-t border-slate-800 pt-8">
               
-              {/* PAYMENT GUIDE */}
               <div className="bg-slate-950 p-4 rounded-xl mb-6 text-sm border border-slate-800">
                 {method === "self" ? (
                   <>
-                    <p className="font-bold text-indigo-400 mb-2">Pay by Myself (Paybill Guide)</p>
+                    <p className="font-bold text-indigo-400 mb-2">Paybill Details</p>
                     <p className="text-white"><strong>Paybill:</strong> {setting?.paybill || "Not set"}</p>
                     <p className="text-white"><strong>Account:</strong> {setting?.accountNo || "Not set"}</p>
-                    <p className="text-xs text-slate-500 mt-2">After sending, fill the form below to submit for approval.</p>
                   </>
                 ) : (
                   <>
-                    <p className="font-bold text-indigo-400 mb-2">Admin Pays for Me (Send Money Guide)</p>
+                    <p className="font-bold text-indigo-400 mb-2">Admin Details</p>
                     <p className="text-white"><strong>Phone:</strong> {setting?.sendMoneyTo || "Not set"}</p>
                     <p className="text-white"><strong>Name:</strong> {setting?.adminName || "Not set"}</p>
-                    <p className="text-xs text-slate-500 mt-2">After sending, fill the form below to submit for approval.</p>
                   </>
                 )}
               </div>
