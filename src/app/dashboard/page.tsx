@@ -173,7 +173,6 @@ export default async function Dashboard() {
           <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{acc.name} Balance</p>
             <p className="text-3xl font-bold text-white mt-2">{fmt(acc.balance)}</p>
-            {/* This Month label dynamically shows current month name */}
             <p className="text-xs text-slate-500 mt-1">
               {currentMonthName}: {fmt(thisMonthTotals[acc.name === "Account 1" ? "account1" : "account2"])}
             </p>
