@@ -27,11 +27,12 @@ export async function POST(req: Request) {
     const a2 = Number(body.account2Amt) || 0;
     const method = body.method;
     const methodDetails = body.methodDetails || "";
-    const paidOn = new Date(body.paidOn);
     const total = a1 + a2;
 
     if (total <= 0) return NextResponse.json({ error: "Enter an amount to withdraw." }, { status: 400 });
-    if (!method || !paidOn || isNaN(paidOn.getTime())) return NextResponse.json({ error: "Invalid details." }, { status: 400 });
+    if (!method || (method !== "cash" && !methodDetails)) {
+      return NextResponse.json({ error: "Please provide the receiving details." }, { status: 400 });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
         totalAmount: total,
         method,
         methodDetails,
-        paidOn,
+        paidOn: new Date(), // Auto-records exact time of request
         status: "pending",
       }
     });

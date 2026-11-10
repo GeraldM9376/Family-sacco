@@ -49,7 +49,6 @@ export default function WithdrawPage() {
       account2Amt: fd.get("account2Amt"),
       method,
       methodDetails,
-      paidOn: fd.get("paidOn"),
     };
 
     try {
@@ -97,6 +96,7 @@ export default function WithdrawPage() {
                     {w.account2Amt > 0 && `| Acc 2: ${fmt(w.account2Amt)}`}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">Via: {w.methodDetails}</p>
+                  <p className="text-[10px] text-slate-500">Requested: {fmtDate(w.createdAt)}</p>
                 </div>
                 <span className="text-xs font-bold text-amber-400 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30">
                   Awaiting Admin
@@ -159,11 +159,6 @@ export default function WithdrawPage() {
             </div>
           )}
 
-          <div>
-            <label className="mb-1.5 block text-sm font-bold text-slate-300">Date Requested</label>
-            <input name="paidOn" type="date" required className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
-          </div>
-
           {err && <p className="text-red-400 text-sm font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{err}</p>}
 
           <button disabled={loading} className="w-full rounded-lg bg-amber-600 py-3.5 font-bold text-white hover:bg-amber-500 transition disabled:opacity-50">
@@ -191,7 +186,12 @@ export default function WithdrawPage() {
                     {w.account2Amt > 0 && `| Acc 2: ${fmt(w.account2Amt)}`}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">{w.methodDetails}</p>
-                  <p className="text-[10px] text-slate-500">{fmtDate(w.createdAt)}</p>
+                  
+                  {/* Show Request Date & Approval Date */}
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Requested: {fmtDate(w.createdAt)}
+                    {w.approvedAt && ` • Approved: ${fmtDate(w.approvedAt)}`}
+                  </p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${w.status === "approved" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>
                   {w.status.toUpperCase()}
