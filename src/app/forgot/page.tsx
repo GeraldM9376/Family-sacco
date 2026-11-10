@@ -10,6 +10,7 @@ export default function ForgotPage() {
   const [idNumber, setIdNumber] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showPass, setShowPass] = useState(false); // NEW: Toggle state
   const [msg, setMsg] = useState<{ text: string; type: "error" | "success" } | null>(null);
   const [loading, setLoading] = useState(false);
   const [adminMsg, setAdminMsg] = useState("");
@@ -47,7 +48,6 @@ export default function ForgotPage() {
       const data = await res.json();
       setLoading(false);
       
-      // Even if it's an "existing code", we treat it as a success and go to Step 2
       if (!res.ok) return setMsg({ text: data.error, type: "error" });
       
       setStep(2);
@@ -139,10 +139,26 @@ export default function ForgotPage() {
                 className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-center text-xl tracking-[0.5em] font-mono text-white outline-none focus:bg-slate-800 focus:border-indigo-500" />
             </div>
             
+            {/* New Password with View/Hide */}
             <div>
               <label className="mb-1.5 block text-sm font-bold text-slate-300">New Password</label>
-              <input type="password" placeholder="••••••••" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white outline-none focus:bg-slate-800 focus:border-indigo-500" />
+              <div className="relative">
+                <input 
+                  type={showPass ? "text" : "password"} 
+                  placeholder="••••••••" 
+                  required 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 pr-12 text-white outline-none focus:bg-slate-800 focus:border-indigo-500" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPass(!showPass)} 
+                  className="absolute right-3 top-3 text-slate-400 hover:text-white"
+                >
+                  {showPass ? "🙈" : "👁️"}
+                </button>
+              </div>
             </div>
 
             <button disabled={loading || timeLeft <= 0} className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-500 transition disabled:opacity-60 mt-2">
