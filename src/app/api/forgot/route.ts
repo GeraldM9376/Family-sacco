@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendOtp } from "@/lib/mailer";
 import { rateLimit } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
@@ -14,8 +13,10 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({ where: { idNumber } });
   if (!user) return NextResponse.json({ error: "No account found with that ID." }, { status: 404 });
 
+  // Generate a NEW code every time
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 HOUR expiry
+  // Expiry exactly 1 hour from now
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
   await prisma.otp.upsert({
     where: { userId: user.id },
@@ -26,8 +27,7 @@ export async function POST(req: Request) {
   const setting = await prisma.setting.findUnique({ where: { id: 1 } });
   const adminPhone = setting?.sendMoneyTo || "Admin";
 
-  // Log the code to the Vercel console so the Admin can see it
-  console.log(`🔐 PASSWORD RESET CODE for ${user.fullName} (${user.idNumber}): ${code}`);
+  console.log(`🔐 PASSWORD RESET CODE for ${user.fullName} (${user.idNumber}): ${code}. Expires at ${expiresAt.toLocaleString('en-KE')}`);
 
   return NextResponse.json({ 
     ok: true, 

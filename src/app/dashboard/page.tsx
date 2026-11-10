@@ -30,6 +30,9 @@ export default async function Dashboard() {
   const greeting = eatHour < 12 ? "Good morning" : eatHour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user.fullName.split(" ")[0];
 
+  // Get exact current month name
+  const currentMonthName = now.toLocaleString('default', { month: 'long' });
+
   // --- Status Banner Logic ---
   const hasActiveLoans = user.loans.length > 0;
   let statusMessage = "";
@@ -74,6 +77,7 @@ export default async function Dashboard() {
 
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
+  // Calculate exact current month totals
   const thisMonthPayments = user.payments.filter((p: any) => {
     const pDate = new Date(p.paidOn);
     return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
@@ -117,7 +121,7 @@ export default async function Dashboard() {
         <p className="font-medium">{statusMessage}</p>
       </div>
 
-      {/* Request Loan Banner with Clear Phone Number */}
+      {/* Request Loan Banner */}
       <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div>
           <h3 className="font-bold text-indigo-300 text-lg mb-1">Need a Loan?</h3>
@@ -169,7 +173,10 @@ export default async function Dashboard() {
           <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{acc.name} Balance</p>
             <p className="text-3xl font-bold text-white mt-2">{fmt(acc.balance)}</p>
-            <p className="text-xs text-slate-500 mt-1">This month: {fmt(thisMonthTotals[acc.name === "Account 1" ? "account1" : "account2"])}</p>
+            {/* This Month label dynamically shows current month name */}
+            <p className="text-xs text-slate-500 mt-1">
+              {currentMonthName}: {fmt(thisMonthTotals[acc.name === "Account 1" ? "account1" : "account2"])}
+            </p>
           </div>
         ))}
       </div>
