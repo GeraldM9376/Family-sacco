@@ -29,9 +29,56 @@ export default function PayClient({
     setAmounts({ ...amounts, [field]: cleanValue });
   };
 
-  // Loans are tied to the User, not the account
-  const normalDebt = loans.filter((l: any) => l.type === "normal").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
-  const emergencyDebt = loans.filter((l: any) => l.type === "emergency").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  const normalLoans = loans.filter((l: any) => l.type === "normal");
+  const emergencyLoans = loans.filter((l: any) => l.type === "emergency");
+  
+  const normalDebt = normalLoans.reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  const emergencyDebt = emergencyLoans.reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+
+  // Helper to get month name
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  // Calculate current installment progress for a specific loan
+  const getLoanProgress = (loan: any) => {
+    const paidInstallments = Math.floor(loan.paidAmount / loan.monthlyInstallment);
+    const currentMonthIndex = paidInstallments; // 0-based index (e.g. 0 = 1st month)
+    
+    // If they have paid everything
+    if (currentMonthIndex >= loan.periodMonths) {
+      return { 
+        status: "completed", 
+        monthName: "All Paid", 
+        paid: loan.amountToPay, 
+        target: loan.monthlyInstallment 
+      };
+    }
+
+    const issuedDate = new Date(loan.issuedOn);
+    const d = new Date(issuedDate);
+    d.setMonth(d.getMonth() + currentMonthIndex);
+    const currentMonthName = monthNames[d.getMonth()];
+
+    // Amount paid INTO the current month (e.g. if they paid 1500, and month 1 was 1000, this is 500)
+    const remainderFromPrevious = loan.paidAmount % loan.monthlyInstallment;
+    const amountPaidIntoCurrentMonth = paidInstallments === 0 ? loan.paidAmount : remainderFromPrevious;
+
+    // If they overpaid and filled the current month, the rest goes to next month
+    const isCurrentMonthFilled = amountPaidIntoCurrentMonth >= loan.monthlyInstallment;
+    
+    // Progress percentage for the active month bar
+    const progressPct = isCurrentMonthFilled 
+      ? 100 
+      : (amountPaidIntoCurrentMonth / loan.monthlyInstallment) * 100;
+
+    return {
+      status: "active",
+      monthName: currentMonthName,
+      monthNumber: currentMonthIndex + 1,
+      paid: amountPaidIntoCurrentMonth,
+      target: loan.monthlyInstallment,
+      progressPct: progressPct
+    };
+  };
 
   const calculateTotal = () => {
     const s = Number(amounts.savings) || 0;
@@ -140,24 +187,65 @@ export default function PayClient({
             </div>
           </div>
 
-          {/* LOANS SECTION */}
-          <div className="flex justify-between items-center bg-slate-800/50 p-5 rounded-xl border border-slate-700">
-            <div>
-              <p className="font-bold text-white">Normal Loan Repayment</p>
-              <p className="text-xs text-red-400">Owed: KES {normalDebt}</p>
-            </div>
-            <input type="number" min="0" step="1" disabled={normalDebt <= 0} placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
-              className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
-          </div>
+          {/* NORMAL LOAN SECTION WITH CURRENT MONTH PROGRESS */}
+          {normalDebt > 0 && normalLoans.map((loan: any) => {
+            const progress = getLoanProgress(loan);
+            return (
+              <div key={loan.id} className="flex flex-col bg-slate-800/50 p-5 rounded-xl border border-slate-700 gap-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-white">Normal Loan Repayment</p>
+                    <p className="text-xs text-red-400">Total Owed: KES {fmt(normalDebt)}</p>
+                  </div>
+                  <input type="number" min="0" step="1" placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
+                    className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
+                </div>
+                
+                {/* Current Month Progress Bar */}
+                {progress.status === "active" && (
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-300 font-semibold">Current: Month {progress.monthNumber} ({progress.monthName})</span>
+                      <span className="text-slate-400">{fmt(progress.paid)} / {fmt(progress.target)}</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${progress.progressPct}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-          <div className="flex justify-between items-center bg-slate-800/50 p-5 rounded-xl border border-slate-700">
-            <div>
-              <p className="font-bold text-white">Emergency Loan Repayment</p>
-              <p className="text-xs text-red-400">Owed: KES {emergencyDebt}</p>
-            </div>
-            <input type="number" min="0" step="1" disabled={emergencyDebt <= 0} placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
-              className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500 disabled:bg-slate-800" />
-          </div>
+          {/* EMERGENCY LOAN SECTION WITH CURRENT MONTH PROGRESS */}
+          {emergencyDebt > 0 && emergencyLoans.map((loan: any) => {
+            const progress = getLoanProgress(loan);
+            return (
+              <div key={loan.id} className="flex flex-col bg-slate-800/50 p-5 rounded-xl border border-slate-700 gap-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-white">Emergency Loan Repayment</p>
+                    <p className="text-xs text-red-400">Total Owed: KES {fmt(emergencyDebt)}</p>
+                  </div>
+                  <input type="number" min="0" step="1" placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
+                    className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
+                </div>
+                
+                {/* Current Month Progress Bar */}
+                {progress.status === "active" && (
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-300 font-semibold">Current: Month {progress.monthNumber} ({progress.monthName})</span>
+                      <span className="text-slate-400">{fmt(progress.paid)} / {fmt(progress.target)}</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${progress.progressPct}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {err && <p className="text-red-400 text-sm font-bold text-center bg-red-500/10 p-2 rounded border border-red-500/20">{err}</p>}
 

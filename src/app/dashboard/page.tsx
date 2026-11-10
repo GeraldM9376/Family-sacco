@@ -137,24 +137,13 @@ export default async function Dashboard() {
         
         {adminPhone ? (
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <a 
-              href={`tel:${adminPhone}`}
-              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2"
-            >
+            <a href={`tel:${adminPhone}`} className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2">
               <span className="text-lg">📞</span> Call
             </a>
-            <a 
-              href={`sms:${adminPhone}?body=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`}
-              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2"
-            >
+            <a href={`sms:${adminPhone}?body=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`} className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2">
               <span className="text-lg">💬</span> Text
             </a>
-            <a 
-              href={`https://wa.me/${adminPhone.replace(/\D/g, '')}?text=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-emerald-600 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-emerald-500 transition flex items-center justify-center gap-2"
-            >
+            <a href={`https://wa.me/${adminPhone.replace(/\D/g, '')}?text=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-emerald-500 transition flex items-center justify-center gap-2">
               <span className="text-lg">💚</span> WhatsApp
             </a>
           </div>
@@ -178,7 +167,7 @@ export default async function Dashboard() {
         ))}
       </div>
 
-      {/* Grand Total + Savings Progress */}
+      {/* Grand Total + Savings Progress with Dynamic Color */}
       <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
@@ -190,7 +179,10 @@ export default async function Dashboard() {
               <span>Savings Progress (Target: 350)</span>
               <span>{Math.round(savingsPct)}%</span>
             </div>
-            <Bar pct={savingsPct} color="emerald" />
+            <Bar 
+              pct={savingsPct} 
+              color={savingsPct < 30 ? "red" : savingsPct < 70 ? "amber" : "emerald"} 
+            />
           </div>
         </div>
       </div>
@@ -239,7 +231,7 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      {/* Active Loans with Segmented Progress */}
+      {/* Active Loans with Smooth Partial Monthly Progress */}
       <div>
         <h2 className="text-lg font-bold text-white mb-4">Active Loans</h2>
         {user.loans.length === 0 ? (
@@ -250,9 +242,9 @@ export default async function Dashboard() {
           <div className="space-y-6">
             {user.loans.map((loan: any) => {
               const remaining = loan.amountToPay - loan.paidAmount;
-              const paidInstallments = Math.floor(loan.paidAmount / loan.monthlyInstallment);
-              
-              // Generate an array of month names starting from the issued date
+              const progressPct = (loan.paidAmount / loan.amountToPay) * 100;
+              const barColor = progressPct < 30 ? "red" : progressPct < 70 ? "amber" : "emerald";
+
               const issuedDate = new Date(loan.issuedOn);
               const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
               const monthsList = [];
@@ -274,37 +266,46 @@ export default async function Dashboard() {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Total Repayment Progress */}
                     <div>
                       <div className="flex justify-between text-xs text-slate-400 mb-1">
                         <span>Total Repayment</span>
-                        <span>{Math.round((loan.paidAmount / loan.amountToPay) * 100)}%</span>
+                        <span>{Math.round(progressPct)}%</span>
                       </div>
-                      <Bar pct={(loan.paidAmount / loan.amountToPay) * 100} color="indigo" />
+                      <Bar pct={progressPct} color={barColor as any} />
                     </div>
 
-                    {/* Segmented Monthly Progress Bar */}
+                    {/* Segmented Monthly Progress with Smooth Fill */}
                     <div>
                       <div className="flex justify-between text-xs text-slate-400 mb-2 mt-4">
-                        <span>Installments ({paidInstallments} of {loan.periodMonths} months paid)</span>
-                        <span>{Math.round((paidInstallments / loan.periodMonths) * 100)}%</span>
+                        <span>Monthly Installments</span>
                       </div>
                       
                       <div className="flex gap-1 w-full h-8">
                         {monthsList.map((m, index) => {
-                          const isPaid = index < paidInstallments;
-                          const activeColor = index % 2 === 0 ? "bg-indigo-500" : "bg-emerald-500";
-                          const inactiveColor = "bg-slate-800";
+                          // How much has been paid for this specific month?
+                          const amountPaidTowardsThisMonth = Math.max(0, Math.min(loan.monthlyInstallment, loan.paidAmount - (index * loan.monthlyInstallment)));
+                          const monthFillPct = (amountPaidTowardsThisMonth / loan.monthlyInstallment) * 100;
+                          
+                          // Alternating colors for the fill
+                          const fillColor = index % 2 === 0 ? "bg-indigo-500" : "bg-emerald-500";
 
                           return (
                             <div 
                               key={index} 
-                              className={`flex-1 rounded-sm flex items-center justify-center transition-all duration-500 ${isPaid ? activeColor : inactiveColor}`}
-                              title={`${m}: ${isPaid ? "Paid" : "Pending"}`}
+                              className="flex-1 rounded-sm relative bg-slate-800 overflow-hidden"
+                              title={`${m}: ${fmt(amountPaidTowardsThisMonth)} / ${fmt(loan.monthlyInstallment)}`}
                             >
-                              <span className={`text-[10px] font-bold uppercase ${isPaid ? "text-white" : "text-slate-500"}`}>
-                                {m}
-                              </span>
+                              {/* The colored fill that grows dynamically */}
+                              <div 
+                                className={`absolute top-0 left-0 h-full ${fillColor} transition-all duration-500`}
+                                style={{ width: `${monthFillPct}%` }}
+                              />
+                              {/* The Month Label (sits above the fill) */}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className={`text-[10px] font-bold uppercase ${monthFillPct >= 50 ? "text-white" : "text-slate-400"}`}>
+                                  {m}
+                                </span>
+                              </div>
                             </div>
                           );
                         })}
