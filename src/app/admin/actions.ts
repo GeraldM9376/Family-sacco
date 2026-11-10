@@ -5,11 +5,11 @@ import { revalidatePath } from "next/cache";
 export async function approvePayment(paymentId: string) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
+    include: { user: { include: { accounts: true } } }
   });
 
   if (!payment || payment.status !== "pending") return;
 
-  const { userId, accountId } = payment;
   let breakdown: any = {};
   try { breakdown = JSON.parse(payment.breakdown || "{}"); } catch (e) {}
 
@@ -19,20 +19,34 @@ export async function approvePayment(paymentId: string) {
       data: { status: "approved" },
     });
 
-    // Savings go to the Account balance
-    if (breakdown.savings > 0) {
-      await tx.account.update({
-        where: { id: accountId },
-        data: { balance: { increment: Number(breakdown.savings) } },
-      });
+    // Handle Account 1 Savings
+    if (breakdown.account1 > 0) {
+      const acc1 = payment.user.accounts.find((a: any) => a.name === "Account 1");
+      if (acc1) {
+        await tx.account.update({
+          where: { id: acc1.id },
+          data: { balance: { increment: Number(breakdown.account1) } },
+        });
+      }
+    }
+
+    // Handle Account 2 Savings
+    if (breakdown.account2 > 0) {
+      const acc2 = payment.user.accounts.find((a: any) => a.name === "Account 2");
+      if (acc2) {
+        await tx.account.update({
+          where: { id: acc2.id },
+          data: { balance: { increment: Number(breakdown.account2) } },
+        });
+      }
     }
     
-    // Loan payments distribute to specific loan records on that account
+    // Handle Loans (User level)
     if (breakdown.normal > 0) {
-      await distributeLoanPayment(tx, accountId, "normal", Number(breakdown.normal));
+      await distributeLoanPayment(tx, payment.userId, "normal", Number(breakdown.normal));
     }
     if (breakdown.emergency > 0) {
-      await distributeLoanPayment(tx, accountId, "emergency", Number(breakdown.emergency));
+      await distributeLoanPayment(tx, payment.userId, "emergency", Number(breakdown.emergency));
     }
   });
 
@@ -73,14 +87,13 @@ export async function saveSettings(formData: FormData) {
 export async function createLoan(formData: FormData) {
   const idNumber = formData.get("idNumber") as string;
   const type = formData.get("type") as string; 
-  const accountName = formData.get("accountName") as string;
   const principal = Number(formData.get("principal"));
   const amountToPay = Number(formData.get("amountToPay"));
   const periodMonths = Number(formData.get("periodMonths"));
   const issuedOn = new Date(formData.get("issuedOn") as string);
   const dueDate = new Date(formData.get("dueDate") as string);
 
-  if (!idNumber || !type || !accountName || isNaN(principal) || isNaN(amountToPay) || isNaN(periodMonths)) {
+  if (!idNumber || !type || isNaN(principal) || isNaN(amountToPay) || isNaN(periodMonths)) {
     throw new Error("Invalid loan details");
   }
 
@@ -89,16 +102,17 @@ export async function createLoan(formData: FormData) {
     include: { accounts: true }
   });
   if (!user) throw new Error("User with that ID does not exist.");
-
-  const targetAccount = user.accounts.find(a => a.name === accountName);
-  if (!targetAccount) throw new Error("Account not found for this user.");
+  
+  // Loans are attached to the user's first account for DB constraint
+  const firstAcc = user.accounts[0];
+  if (!firstAcc) throw new Error("User has no accounts.");
 
   const monthlyInstallment = amountToPay / periodMonths;
 
   await prisma.loan.create({
     data: {
       userId: user.id,
-      accountId: targetAccount.id,
+      accountId: firstAcc.id,
       type,
       principal,
       amountToPay,
@@ -116,13 +130,12 @@ export async function createLoan(formData: FormData) {
 
 export async function adminRecordPayment(formData: FormData) {
   const idNumber = formData.get("idNumber") as string;
-  const accountName = formData.get("accountName") as string;
   const type = formData.get("type") as string;
   const amount = Number(formData.get("amount"));
   const payerName = (formData.get("payerName") as string).toUpperCase();
   const paidOn = new Date(formData.get("paidOn") as string);
 
-  if (!idNumber || !accountName || !type || isNaN(amount) || amount <= 0) {
+  if (!idNumber || !type || isNaN(amount) || amount <= 0) {
     throw new Error("Invalid payment details");
   }
 
@@ -132,24 +145,19 @@ export async function adminRecordPayment(formData: FormData) {
   });
   if (!user) throw new Error("User with that ID does not exist.");
 
-  const targetAccount = user.accounts.find(a => a.name === accountName);
-  if (!targetAccount) throw new Error("Account not found for this user.");
+  const firstAcc = user.accounts[0];
+  if (!firstAcc) throw new Error("User has no accounts.");
 
-  // Fetch this account's loans to validate
-  const accountLoans = await prisma.loan.findMany({
-    where: { accountId: targetAccount.id, userId: user.id, status: "unpaid" },
+  // Validate loans
+  const userLoans = await prisma.loan.findMany({
+    where: { userId: user.id, status: "unpaid" },
   });
 
-  const normalDebt = accountLoans
-    .filter(l => l.type === "normal")
-    .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
-  
-  const emergencyDebt = accountLoans
-    .filter(l => l.type === "emergency")
-    .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  const normalDebt = userLoans.filter(l => l.type === "normal").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+  const emergencyDebt = userLoans.filter(l => l.type === "emergency").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
 
-  if (type === "normal" && amount > normalDebt) throw new Error(`Cannot pay more than normal loan debt (KES ${normalDebt}).`);
-  if (type === "emergency" && amount > emergencyDebt) throw new Error(`Cannot pay more than emergency loan debt (KES ${emergencyDebt}).`);
+  if (type === "normal" && amount > normalDebt) throw new Error(`Cannot pay more than normal loan debt.`);
+  if (type === "emergency" && amount > emergencyDebt) throw new Error(`Cannot pay more than emergency loan debt.`);
 
   await prisma.$transaction(async (tx: any) => {
     const breakdown = JSON.stringify({ [type]: amount });
@@ -157,7 +165,7 @@ export async function adminRecordPayment(formData: FormData) {
     await tx.payment.create({
       data: {
         userId: user.id,
-        accountId: targetAccount.id,
+        accountId: firstAcc.id,
         breakdown,
         totalAmount: amount,
         method: "admin",
@@ -170,11 +178,11 @@ export async function adminRecordPayment(formData: FormData) {
 
     if (type === "savings") {
       await tx.account.update({
-        where: { id: targetAccount.id },
+        where: { id: firstAcc.id },
         data: { balance: { increment: amount } },
       });
     } else if (type === "normal" || type === "emergency") {
-      await distributeLoanPayment(tx, targetAccount.id, type, amount);
+      await distributeLoanPayment(tx, user.id, type, amount);
     }
   });
 
@@ -183,10 +191,11 @@ export async function adminRecordPayment(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-async function distributeLoanPayment(tx: any, accountId: string, type: string, amountPaid: number) {
+// Helper to distribute payment across user's loans
+async function distributeLoanPayment(tx: any, userId: string, type: string, amountPaid: number) {
   let remaining = amountPaid;
   const activeLoans = await tx.loan.findMany({
-    where: { accountId, type, status: "unpaid" },
+    where: { userId, type, status: "unpaid" },
     orderBy: { dueDate: "asc" },
   });
 

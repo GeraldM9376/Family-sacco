@@ -16,18 +16,22 @@ export default function PayClient({
   pendingPayments: any[] 
 }) {
   const router = useRouter();
-  const [selectedAccount, setSelectedAccount] = useState<string>("");
-  const [amounts, setAmounts] = useState({ savings: "", normal: "", emergency: "" });
+  const [account1Amount, setAccount1Amount] = useState("");
+  const [account2Amount, setAccount2Amount] = useState("");
+  const [amounts, setAmounts] = useState({ normal: "", emergency: "" });
   const [total, setTotal] = useState<number | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [method, setMethod] = useState<"self" | "admin" | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const handleAmountChange = (field: "savings" | "normal" | "emergency", value: string) => {
+  const handleAmountChange = (field: "normal" | "emergency", value: string) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
     setAmounts({ ...amounts, [field]: cleanValue });
   };
+
+  const handleAcc1Change = (val: string) => setAccount1Amount(val.replace(/[^0-9]/g, ""));
+  const handleAcc2Change = (val: string) => setAccount2Amount(val.replace(/[^0-9]/g, ""));
 
   const normalLoans = loans.filter((l: any) => l.type === "normal");
   const emergencyLoans = loans.filter((l: any) => l.type === "emergency");
@@ -35,22 +39,14 @@ export default function PayClient({
   const normalDebt = normalLoans.reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
   const emergencyDebt = emergencyLoans.reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
 
-  // Helper to get month name
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  // Calculate current installment progress for a specific loan
   const getLoanProgress = (loan: any) => {
     const paidInstallments = Math.floor(loan.paidAmount / loan.monthlyInstallment);
-    const currentMonthIndex = paidInstallments; // 0-based index (e.g. 0 = 1st month)
+    const currentMonthIndex = paidInstallments;
     
-    // If they have paid everything
     if (currentMonthIndex >= loan.periodMonths) {
-      return { 
-        status: "completed", 
-        monthName: "All Paid", 
-        paid: loan.amountToPay, 
-        target: loan.monthlyInstallment 
-      };
+      return { status: "completed", monthName: "All Paid", paid: loan.amountToPay, target: loan.monthlyInstallment };
     }
 
     const issuedDate = new Date(loan.issuedOn);
@@ -58,17 +54,10 @@ export default function PayClient({
     d.setMonth(d.getMonth() + currentMonthIndex);
     const currentMonthName = monthNames[d.getMonth()];
 
-    // Amount paid INTO the current month (e.g. if they paid 1500, and month 1 was 1000, this is 500)
     const remainderFromPrevious = loan.paidAmount % loan.monthlyInstallment;
     const amountPaidIntoCurrentMonth = paidInstallments === 0 ? loan.paidAmount : remainderFromPrevious;
-
-    // If they overpaid and filled the current month, the rest goes to next month
     const isCurrentMonthFilled = amountPaidIntoCurrentMonth >= loan.monthlyInstallment;
-    
-    // Progress percentage for the active month bar
-    const progressPct = isCurrentMonthFilled 
-      ? 100 
-      : (amountPaidIntoCurrentMonth / loan.monthlyInstallment) * 100;
+    const progressPct = isCurrentMonthFilled ? 100 : (amountPaidIntoCurrentMonth / loan.monthlyInstallment) * 100;
 
     return {
       status: "active",
@@ -81,17 +70,14 @@ export default function PayClient({
   };
 
   const calculateTotal = () => {
-    const s = Number(amounts.savings) || 0;
+    const a1 = Number(account1Amount) || 0;
+    const a2 = Number(account2Amount) || 0;
     const n = Number(amounts.normal) || 0;
     const e = Number(amounts.emergency) || 0;
     
-    if (s < 0 || n < 0 || e < 0) return setErr("Amounts cannot be negative.");
-    const sum = s + n + e;
+    if (a1 < 0 || a2 < 0 || n < 0 || e < 0) return setErr("Amounts cannot be negative.");
+    const sum = a1 + a2 + n + e;
     if (sum <= 0) return setErr("Please enter at least one amount.");
-    
-    if (s > 0 && !selectedAccount) {
-      return setErr("Please select an account to deposit your savings into.");
-    }
 
     if (n > normalDebt) return setErr(`You cannot pay more than ${normalDebt} for normal loans.`);
     if (e > emergencyDebt) return setErr(`You cannot pay more than ${emergencyDebt} for emergency loans.`);
@@ -109,9 +95,9 @@ export default function PayClient({
     setErr("");
     
     const fd = new FormData(e.currentTarget);
-    fd.append("accountId", selectedAccount || user.accounts[0]?.id || "");
+    fd.append("account1Amount", account1Amount || "0");
+    fd.append("account2Amount", account2Amount || "0");
     fd.append("totalAmount", total?.toString() || "0");
-    fd.append("savingsAmt", amounts.savings || "0");
     fd.append("normalAmt", amounts.normal || "0");
     fd.append("emergencyAmt", amounts.emergency || "0");
     fd.append("method", method || "");
@@ -131,7 +117,7 @@ export default function PayClient({
         <h1 className="text-3xl font-extrabold text-white">Make a Payment</h1>
       </div>
 
-      {/* PENDING APPROVALS SECTION */}
+      {/* PENDING APPROVALS */}
       {pendingPayments.length > 0 && (
         <div className="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/10 p-6">
           <h3 className="font-bold text-amber-300 text-lg mb-4 flex items-center gap-2">
@@ -144,9 +130,10 @@ export default function PayClient({
               return (
                 <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
                   <div>
-                    <p className="font-bold text-white">{fmt(p.totalAmount)} <span className="text-xs font-normal text-slate-400">to {p.account?.name}</span></p>
+                    <p className="font-bold text-white">{fmt(p.totalAmount)}</p>
                     <p className="text-xs text-slate-400 mt-1">
-                      {breakdown.savings > 0 && `Savings: ${fmt(breakdown.savings)} `}
+                      {breakdown.account1 > 0 && `Acc 1: ${fmt(breakdown.account1)} `}
+                      {breakdown.account2 > 0 && `| Acc 2: ${fmt(breakdown.account2)} `}
                       {breakdown.normal > 0 && `| Normal: ${fmt(breakdown.normal)} `}
                       {breakdown.emergency > 0 && `| Emergency: ${fmt(breakdown.emergency)}`}
                     </p>
@@ -167,27 +154,25 @@ export default function PayClient({
       {!showOptions && (
         <div className="rounded-3xl bg-slate-900 p-8 border border-slate-800 shadow-xl space-y-6">
           
-          {/* SAVINGS SECTION */}
-          <div className="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
-            <p className="font-bold text-white mb-2">Savings Deposit</p>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex flex-wrap gap-2">
-                {user.accounts.map((acc: any) => (
-                  <button
-                    key={acc.id}
-                    onClick={() => setSelectedAccount(acc.id)}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold border transition ${selectedAccount === acc.id ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-900 border-slate-700 text-slate-400 hover:text-white"}`}
-                  >
-                    {acc.name}
-                  </button>
-                ))}
-              </div>
-              <input type="number" min="0" step="1" placeholder="0" value={amounts.savings} onChange={(e) => handleAmountChange("savings", e.target.value)}
-                className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
-            </div>
+          {/* ACCOUNTS SECTION */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {user.accounts.map((acc: any) => {
+              const isAcc1 = acc.name === "Account 1";
+              return (
+                <div key={acc.id} className="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
+                  <p className="font-bold text-white mb-2">{acc.name} Savings</p>
+                  <input 
+                    type="number" min="0" step="1" placeholder="0" 
+                    value={isAcc1 ? account1Amount : account2Amount} 
+                    onChange={(e) => isAcc1 ? handleAcc1Change(e.target.value) : handleAcc2Change(e.target.value)}
+                    className="w-full rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" 
+                  />
+                </div>
+              );
+            })}
           </div>
 
-          {/* NORMAL LOAN SECTION WITH CURRENT MONTH PROGRESS */}
+          {/* NORMAL LOAN */}
           {normalDebt > 0 && normalLoans.map((loan: any) => {
             const progress = getLoanProgress(loan);
             return (
@@ -200,8 +185,6 @@ export default function PayClient({
                   <input type="number" min="0" step="1" placeholder="0" value={amounts.normal} onChange={(e) => handleAmountChange("normal", e.target.value)}
                     className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
                 </div>
-                
-                {/* Current Month Progress Bar */}
                 {progress.status === "active" && (
                   <div>
                     <div className="flex justify-between text-xs mb-1">
@@ -217,7 +200,7 @@ export default function PayClient({
             );
           })}
 
-          {/* EMERGENCY LOAN SECTION WITH CURRENT MONTH PROGRESS */}
+          {/* EMERGENCY LOAN */}
           {emergencyDebt > 0 && emergencyLoans.map((loan: any) => {
             const progress = getLoanProgress(loan);
             return (
@@ -230,8 +213,6 @@ export default function PayClient({
                   <input type="number" min="0" step="1" placeholder="0" value={amounts.emergency} onChange={(e) => handleAmountChange("emergency", e.target.value)}
                     className="w-32 rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2 text-white font-semibold text-right outline-none focus:border-indigo-500" />
                 </div>
-                
-                {/* Current Month Progress Bar */}
                 {progress.status === "active" && (
                   <div>
                     <div className="flex justify-between text-xs mb-1">
@@ -277,7 +258,6 @@ export default function PayClient({
 
           {method && (
             <form onSubmit={handleSubmit} className="space-y-4 border-t border-slate-800 pt-8">
-              
               <div className="bg-slate-950 p-4 rounded-xl mb-6 text-sm border border-slate-800">
                 {method === "self" ? (
                   <>
