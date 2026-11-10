@@ -14,7 +14,22 @@ export default function WithdrawPage() {
     setMsg("");
 
     const fd = new FormData(e.currentTarget);
-    const body = Object.fromEntries(fd.entries());
+    
+    // Combine Paybill and Account Number if method is paybill
+    let methodDetails = fd.get("methodDetails") as string;
+    if (method === "paybill") {
+      const paybill = fd.get("paybill") as string;
+      const accNo = fd.get("accountNo") as string;
+      methodDetails = `Paybill: ${paybill}, Account: ${accNo}`;
+    }
+
+    const body = {
+      account1Amt: fd.get("account1Amt"),
+      account2Amt: fd.get("account2Amt"),
+      method,
+      methodDetails,
+      paidOn: fd.get("paidOn"),
+    };
 
     try {
       const res = await fetch("/api/dashboard/withdraw", {
@@ -67,17 +82,24 @@ export default function WithdrawPage() {
             </select>
           </div>
 
-          {method !== "cash" && (
+          {/* Dynamic Details Inputs */}
+          {method === "send_money" && (
             <div>
-              <label className="mb-1.5 block text-sm font-bold text-slate-300">
-                {method === "send_money" ? "Your M-Pesa Phone Number" : "Your Paybill & Account Number"}
-              </label>
-              <input 
-                name="methodDetails" 
-                required 
-                placeholder={method === "send_money" ? "e.g. +254712345678" : "e.g. Paybill 247247, Acc 123456"}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" 
-              />
+              <label className="mb-1.5 block text-sm font-bold text-slate-300">Your M-Pesa Phone Number</label>
+              <input name="methodDetails" required placeholder="e.g. +254712345678" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+            </div>
+          )}
+
+          {method === "paybill" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-300">Paybill Number</label>
+                <input name="paybill" required placeholder="e.g. 247247" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-bold text-slate-300">Account Number</label>
+                <input name="accountNo" required placeholder="e.g. 123456" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+              </div>
             </div>
           )}
 
