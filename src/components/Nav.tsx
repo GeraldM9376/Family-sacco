@@ -35,15 +35,18 @@ export function Nav() {
         </div>
 
         <div className="flex w-full md:w-auto items-center gap-1 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
-          {role === "admin" ? (
+                    {role === "admin" ? (
             <>
               {navLink("/admin", "Dashboard")}
               {navLink("/admin/users", "Users")}
               {navLink("/admin/loans/new", "New Loan")}
               {navLink("/admin/payments/new", "Record Payment")}
+              {navLink("/admin/withdrawals", "Withdrawals")}
               {navLink("/admin/settings", "Settings")}
             </>
           ) : (
+            // ... user links remain the same
+          )}
             <>
               {navLink("/dashboard", "Overview")}
               {navLink("/dashboard/pay", "Make Payment")}

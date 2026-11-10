@@ -218,3 +218,38 @@ async function distributeLoanPayment(tx: any, userId: string, type: string, amou
     remaining -= paymentForThisLoan;
   }
 }
+export async function approveWithdrawal(withdrawalId: string) {
+  const w = await prisma.withdrawal.findUnique({
+    where: { id: withdrawalId },
+    include: { user: { include: { accounts: true } } }
+  });
+  if (!w || w.status !== "pending") return;
+
+  const acc1 = w.user.accounts.find(a => a.name === "Account 1");
+  const acc2 = w.user.accounts.find(a => a.name === "Account 2");
+
+  await prisma.$transaction(async (tx: any) => {
+    await tx.withdrawal.update({
+      where: { id: withdrawalId },
+      data: { status: "approved" },
+    });
+
+    if (w.account1Amt > 0 && acc1) {
+      await tx.account.update({
+        where: { id: acc1.id },
+        data: { balance: { decrement: w.account1Amt } },
+      });
+    }
+
+    if (w.account2Amt > 0 && acc2) {
+      await tx.account.update({
+        where: { id: acc2.id },
+        data: { balance: { decrement: w.account2Amt } },
+      });
+    }
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/withdrawals");
+  revalidatePath("/dashboard");
+}

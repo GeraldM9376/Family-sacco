@@ -104,7 +104,7 @@ export default async function Dashboard() {
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-10 space-y-8">
-      {/* Header */}
+            {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-8">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight">
@@ -119,9 +119,16 @@ export default async function Dashboard() {
             </span>
           </div>
         </div>
-        <Link href="/dashboard/pay" className="rounded-lg bg-indigo-600 px-6 py-2.5 font-semibold text-white hover:bg-indigo-500 transition">
-          Make a Payment
-        </Link>
+        
+        {/* NEW: Withdraw and Payment buttons */}
+        <div className="flex gap-3">
+          <Link href="/dashboard/withdraw" className="rounded-lg bg-slate-800 border border-slate-700 px-6 py-2.5 font-semibold text-white hover:bg-slate-700 transition">
+            Withdraw
+          </Link>
+          <Link href="/dashboard/pay" className="rounded-lg bg-indigo-600 px-6 py-2.5 font-semibold text-white hover:bg-indigo-500 transition">
+            Make a Payment
+          </Link>
+        </div>
       </div>
 
       {/* Status Banner */}
