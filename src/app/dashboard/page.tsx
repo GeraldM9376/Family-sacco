@@ -81,6 +81,9 @@ export default async function Dashboard() {
     ...monthlyData[key],
   })).sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
 
+  // Sum of all monthly deposits (IGNORES WITHDRAWALS)
+  const totalSavingsDeposited = monthlyList.reduce((sum, m) => sum + m.total, 0);
+
   // --- This Month's Calculations (Resets Monthly) ---
   const thisMonthPayments = user.payments.filter((p: any) => {
     const pDate = new Date(p.paidOn);
@@ -98,12 +101,6 @@ export default async function Dashboard() {
   const thisMonthGrandTotal = thisMonthTotals.account1 + thisMonthTotals.account2;
   const savingsPct = Math.min(100, (thisMonthGrandTotal / 350) * 100);
 
-  // --- All-Time Calculations ---
-  const totalSavingsDeposited = monthlyList.reduce((sum, m) => sum + m.total, 0);
-  const totalWithdrawn = user.withdrawals.reduce((sum, w) => sum + w.totalAmount, 0);
-  const allTimeSavings = totalSavingsDeposited - totalWithdrawn;
-
-  // Grand Total = Current Balances (which already had withdrawals deducted by Admin actions)
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
   return (
@@ -149,10 +146,9 @@ export default async function Dashboard() {
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{acc.name} Balance</p>
               <p className="text-4xl font-extrabold text-white mt-2 mb-4">{fmt(acc.balance)}</p>
               
-              {/* Detailed Month Badge */}
-              <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-3 flex justify-between items-center">
-                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{currentMonthName} {currentYear}</span>
-                <span className="text-sm font-bold text-white">{fmt(monthAmount)}</span>
+              <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-3 text-sm">
+                <span className="font-bold text-indigo-400">{currentMonthName} {currentYear} contribution: </span>
+                <span className="font-bold text-white">{fmt(monthAmount)}</span>
               </div>
             </div>
           );
@@ -213,7 +209,7 @@ export default async function Dashboard() {
                 <td className="p-5 font-bold text-white">All-Time Savings Total</td>
                 <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account1, 0))}</td>
                 <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account2, 0))}</td>
-                <td className="p-5 text-right font-bold text-indigo-400">{fmt(allTimeSavings)}</td>
+                <td className="p-5 text-right font-bold text-indigo-400">{fmt(totalSavingsDeposited)}</td>
               </tr>
             </tfoot>
           </table>
