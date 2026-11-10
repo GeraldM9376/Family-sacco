@@ -3,6 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+export async function GET() {
+  const s = await getServerSession(authOptions);
+  if (!s?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = (s.user as any).id;
+
+  const withdrawals = await prisma.withdrawal.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(withdrawals);
+}
+
 export async function POST(req: Request) {
   const s = await getServerSession(authOptions);
   if (!s?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,119 +1,337 @@
-"use client";
-import { useState } from "react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { Bar } from "@/components/Bar";
+import { fmt } from "@/lib/helpers";
+import Link from "next/link";
+import { connection } from "next/server";
 
-export default function WithdrawPage() {
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const [msg, setMsg] = useState("");
-  const [method, setMethod] = useState("send_money");
+export default async function Dashboard() {
+  await connection();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setErr("");
-    setMsg("");
+  const s = await getServerSession(authOptions);
+  const user = await prisma.user.findUnique({
+    where: { id: (s!.user as any).id },
+    include: {
+      accounts: true,
+      payments: { where: { status: "approved" }, orderBy: { paidOn: "desc" } },
+      loans: { where: { status: "unpaid" }, orderBy: { dueDate: "asc" } },
+      withdrawals: { where: { status: "approved" } }, // Fetch withdrawals
+    },
+  });
 
-    const fd = new FormData(e.currentTarget);
-    
-    // Combine Paybill and Account Number if method is paybill
-    let methodDetails = fd.get("methodDetails") as string;
-    if (method === "paybill") {
-      const paybill = fd.get("paybill") as string;
-      const accNo = fd.get("accountNo") as string;
-      methodDetails = `Paybill: ${paybill}, Account: ${accNo}`;
-    }
+  const setting = await prisma.setting.findUnique({ where: { id: 1 } });
+  const adminPhone = setting?.sendMoneyTo || "";
 
-    const body = {
-      account1Amt: fd.get("account1Amt"),
-      account2Amt: fd.get("account2Amt"),
-      method,
-      methodDetails,
-      paidOn: fd.get("paidOn"),
-    };
+  if (!user) return <p className="text-white p-8">Loading…</p>;
 
-    try {
-      const res = await fetch("/api/dashboard/withdraw", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) { setErr(data.error || "Withdrawal failed."); setLoading(false); return; }
-      
-      setMsg("Withdrawal request submitted. Awaiting Admin approval.");
-      setLoading(false);
-    } catch (error: any) {
-      setErr("Something went wrong.");
-      setLoading(false);
-    }
+  const now = new Date();
+  const eatTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));
+  const eatHour = eatTime.getUTCHours();
+  const greeting = eatHour < 12 ? "Good morning" : eatHour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = user.fullName.split(" ")[0];
+
+  const currentMonthName = now.toLocaleString('default', { month: 'long' });
+
+  // --- Status Banner Logic ---
+  const hasActiveLoans = user.loans.length > 0;
+  let statusMessage = "";
+  let statusColor = "";
+  
+  if (!hasActiveLoans && user.accounts.reduce((sum, a) => sum + a.balance, 0) > 1000) {
+    statusMessage = "You are completely debt-free and your savings are growing strong. Amazing work!";
+    statusColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+  } else if (!hasActiveLoans) {
+    statusMessage = "You have zero active loans. A clean slate! Keep building your wealth.";
+    statusColor = "bg-slate-800 text-slate-300 border-slate-700";
+  } else {
+    statusMessage = "You have active loans. Every payment brings you closer to financial freedom.";
+    statusColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
   }
 
+  // --- Monthly Breakdown Logic (SAVINGS ONLY) ---
+  const monthlyData: Record<string, { account1: number, account2: number, total: number }> = {};
+
+  user.payments.forEach((p: any) => {
+    let breakdown: any = {};
+    try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
+
+    if (!breakdown.account1 && !breakdown.account2) return;
+
+    const pDate = new Date(p.paidOn);
+    const monthKey = `${pDate.toLocaleString('default', { month: 'long' })} ${pDate.getFullYear()}`;
+    
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { account1: 0, account2: 0, total: 0 };
+    }
+
+    if (breakdown.account1 > 0) {
+      monthlyData[monthKey].account1 += Number(breakdown.account1);
+      monthlyData[monthKey].total += Number(breakdown.account1);
+    }
+    if (breakdown.account2 > 0) {
+      monthlyData[monthKey].account2 += Number(breakdown.account2);
+      monthlyData[monthKey].total += Number(breakdown.account2);
+    }
+  });
+
+  const monthlyList = Object.keys(monthlyData).map((key) => ({
+    month: key,
+    ...monthlyData[key],
+  })).sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+
+  // Sum of all monthly deposits (All-Time Savings)
+  const totalSavingsDeposited = monthlyList.reduce((sum, m) => sum + m.total, 0);
+
+  // Sum of all withdrawals
+  const totalWithdrawn = user.withdrawals.reduce((sum, w) => sum + w.totalAmount, 0);
+
+  // All-Time Savings = Deposits - Withdrawals
+  const allTimeSavings = totalSavingsDeposited - totalWithdrawn;
+
+  const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
+
+  // This Month's total for the top cards (Resets every month)
+  const thisMonthPayments = user.payments.filter((p: any) => {
+    const pDate = new Date(p.paidOn);
+    return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
+  });
+  
+  const thisMonthTotals = { account1: 0, account2: 0 };
+  thisMonthPayments.forEach((p: any) => {
+    let breakdown: any = {};
+    try { breakdown = JSON.parse(p.breakdown || "{}"); } catch (e) {}
+    if (breakdown.account1 > 0) thisMonthTotals.account1 += Number(breakdown.account1);
+    if (breakdown.account2 > 0) thisMonthTotals.account2 += Number(breakdown.account2);
+  });
+
+  const totalSavings = user.accounts.reduce((sum, a) => sum + a.balance, 0);
+  const savingsPct = Math.min(100, (totalSavings / 350) * 100);
+
   return (
-    <div className="mx-auto max-w-lg p-4 md:p-10 mt-10">
-      <div className="rounded-2xl bg-slate-900 p-8 border border-slate-800 shadow-xl">
-        <h1 className="mb-2 text-2xl font-bold text-white">Withdraw Contribution</h1>
-        <p className="text-sm text-slate-400 mb-8">Enter amounts and choose how you want to receive the money.</p>
-
-        {msg && <div className="bg-emerald-500/20 text-emerald-400 p-3 rounded-lg mb-4 text-sm font-bold border border-emerald-500/30">{msg}</div>}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-bold text-slate-300">From Account 1</label>
-              <input name="account1Amt" type="number" min="0" placeholder="0" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-bold text-slate-300">From Account 2</label>
-              <input name="account2Amt" type="number" min="0" placeholder="0" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
-            </div>
+    <div className="mx-auto max-w-5xl p-4 md:p-10 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-slate-800 pb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            {greeting}, {firstName}
+          </h1>
+          <div className="flex flex-wrap items-center gap-3 mt-4">
+            <span className="px-3 py-1 bg-slate-900 rounded-md text-xs font-mono text-slate-300 border border-slate-800">
+              ID: {user.idNumber}
+            </span>
+            <span className="px-3 py-1 bg-slate-900 rounded-md text-xs text-slate-300 border border-slate-800">
+              Phone: {user.phone}
+            </span>
           </div>
+        </div>
+        
+        <div className="flex gap-3">
+          <Link href="/dashboard/withdraw" className="rounded-lg bg-slate-800 border border-slate-700 px-6 py-2.5 font-semibold text-white hover:bg-slate-700 transition">
+            Withdraw
+          </Link>
+          <Link href="/dashboard/pay" className="rounded-lg bg-indigo-600 px-6 py-2.5 font-semibold text-white hover:bg-indigo-500 transition">
+            Make a Payment
+          </Link>
+        </div>
+      </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-bold text-slate-300">Receive Money Via</label>
-            <select 
-              name="method" 
-              value={method}
-              onChange={(e) => setMethod(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
-            >
-              <option value="send_money">M-Pesa Send Money</option>
-              <option value="paybill">Paybill Refund</option>
-              <option value="cash">Cash</option>
-            </select>
-          </div>
+      {/* Status Banner */}
+      <div className={`rounded-xl border p-4 flex items-center gap-4 ${statusColor}`}>
+        <div className="text-2xl">{!hasActiveLoans ? "✓" : "!"}</div>
+        <p className="font-medium">{statusMessage}</p>
+      </div>
 
-          {/* Dynamic Details Inputs */}
-          {method === "send_money" && (
-            <div>
-              <label className="mb-1.5 block text-sm font-bold text-slate-300">Your M-Pesa Phone Number</label>
-              <input name="methodDetails" required placeholder="e.g. +254712345678" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+      {/* Request Loan Banner */}
+      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div>
+          <h3 className="font-bold text-indigo-300 text-lg mb-1">Need a Loan?</h3>
+          <p className="text-sm text-indigo-400/80 mb-4">
+            Loan requests are processed by the Admin. Contact them to apply.
+          </p>
+          
+          {adminPhone && (
+            <div className="bg-slate-900/50 border border-slate-700/50 p-3 rounded-lg inline-block">
+              <p className="text-xs text-slate-400 mb-1">Admin Contact Number:</p>
+              <p className="text-2xl font-mono font-bold text-white tracking-wider">{adminPhone}</p>
             </div>
           )}
-
-          {method === "paybill" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-300">Paybill Number</label>
-                <input name="paybill" required placeholder="e.g. 247247" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-300">Account Number</label>
-                <input name="accountNo" required placeholder="e.g. 123456" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="mb-1.5 block text-sm font-bold text-slate-300">Date Requested</label>
-            <input name="paidOn" type="date" required className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+        </div>
+        
+        {adminPhone ? (
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+            <a href={`tel:${adminPhone}`} className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2">
+              <span className="text-lg">📞</span> Call
+            </a>
+            <a href={`sms:${adminPhone}?body=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`} className="bg-slate-800 border border-slate-700 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-slate-700 transition flex items-center justify-center gap-2">
+              <span className="text-lg">💬</span> Text
+            </a>
+            <a href={`https://wa.me/${adminPhone.replace(/\D/g, '')}?text=Hello%20Admin,%20I%20would%20like%20to%20request%20a%20loan.`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 text-white rounded-lg px-5 py-3 text-sm font-bold shadow hover:bg-emerald-500 transition flex items-center justify-center gap-2">
+              <span className="text-lg">💚</span> WhatsApp
+            </a>
           </div>
+        ) : (
+          <div className="bg-slate-800 text-slate-400 rounded-lg px-4 py-3 text-sm font-bold border border-slate-700 text-center">
+            Admin phone number not configured in Settings
+          </div>
+        )}
+      </div>
 
-          {err && <p className="text-red-400 text-sm font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{err}</p>}
+      {/* Account Balances (Current Month) */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {user.accounts.map((acc: any) => (
+          <div key={acc.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{acc.name} Balance</p>
+            <p className="text-3xl font-bold text-white mt-2">{fmt(acc.balance)}</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {currentMonthName} savings: {fmt(thisMonthTotals[acc.name === "Account 1" ? "account1" : "account2"])}
+            </p>
+          </div>
+        ))}
+      </div>
 
-          <button disabled={loading} className="w-full rounded-lg bg-amber-600 py-3.5 font-bold text-white hover:bg-amber-500 transition disabled:opacity-50">
-            {loading ? "Processing..." : "Request Withdrawal"}
-          </button>
-        </form>
+      {/* Grand Total + Savings Progress */}
+      <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest">Current Grand Total Balance</p>
+            <p className="text-4xl font-bold text-white mt-2">{fmt(grandTotal)}</p>
+          </div>
+          <div className="w-full md:w-1/2">
+            <div className="flex justify-between text-xs text-slate-400 mb-2">
+              <span>Savings Progress (Target: 350)</span>
+              <span>{Math.round(savingsPct)}%</span>
+            </div>
+            <Bar pct={savingsPct} color={savingsPct < 30 ? "red" : savingsPct < 70 ? "amber" : "emerald"} />
+          </div>
+        </div>
+      </div>
+
+      {/* MONTHLY BREAKDOWN TABLE (SAVINGS ONLY) */}
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
+        <div className="p-6 border-b border-slate-800">
+          <h2 className="text-lg font-bold text-white">Monthly Savings Breakdown</h2>
+          <p className="text-xs text-slate-500 mt-1">Every month's savings contributions per account.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-950 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                <th className="p-5">Month / Year</th>
+                <th className="p-5 text-right">Account 1</th>
+                <th className="p-5 text-right">Account 2</th>
+                <th className="p-5 text-right">Monthly Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {monthlyList.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-slate-500">No savings payments made yet.</td>
+                </tr>
+              ) : (
+                monthlyList.map((m) => (
+                  <tr key={m.month} className="hover:bg-slate-800/30 transition">
+                    <td className="p-5 font-bold text-white">{m.month}</td>
+                    <td className="p-5 text-right text-slate-300">{fmt(m.account1)}</td>
+                    <td className="p-5 text-right text-slate-300">{fmt(m.account2)}</td>
+                    <td className="p-5 text-right font-bold text-indigo-400">{fmt(m.total)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            <tfoot className="bg-slate-950 border-t border-slate-800">
+              <tr>
+                <td className="p-5 font-bold text-white">All-Time Savings Total</td>
+                <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account1, 0))}</td>
+                <td className="p-5 text-right font-bold text-white">{fmt(monthlyList.reduce((sum, m) => sum + m.account2, 0))}</td>
+                <td className="p-5 text-right font-bold text-indigo-400">{fmt(allTimeSavings)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {/* Active Loans with Smooth Partial Monthly Progress */}
+      <div>
+        <h2 className="text-lg font-bold text-white mb-4">Active Loans</h2>
+        {user.loans.length === 0 ? (
+          <div className="rounded-2xl bg-slate-900 border border-slate-800 p-6">
+            <p className="text-sm text-slate-400">You have no active loans.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {user.loans.map((loan: any) => {
+              const remaining = loan.amountToPay - loan.paidAmount;
+              const progressPct = (loan.paidAmount / loan.amountToPay) * 100;
+              const barColor = progressPct < 30 ? "red" : progressPct < 70 ? "amber" : "emerald";
+
+              const issuedDate = new Date(loan.issuedOn);
+              const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+              const monthsList = [];
+              for (let i = 0; i < loan.periodMonths; i++) {
+                const d = new Date(issuedDate);
+                d.setMonth(d.getMonth() + i);
+                monthsList.push(monthNames[d.getMonth()]);
+              }
+
+              return (
+                <div key={loan.id} className="rounded-2xl bg-slate-900 p-6 border border-slate-800">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <span className="font-bold text-white capitalize">{loan.type} Loan</span>
+                      <p className="text-xs text-slate-500 mt-1">Monthly Installment: <span className="text-white">{fmt(loan.monthlyInstallment)}</span></p>
+                      <p className="text-xs text-slate-500">Account: {user.accounts.find((a: any) => a.id === loan.accountId)?.name}</p>
+                    </div>
+                    <span className="text-sm font-bold text-red-400">{fmt(remaining)} Left</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>Total Repayment</span>
+                        <span>{Math.round(progressPct)}%</span>
+                      </div>
+                      <Bar pct={progressPct} color={barColor as any} />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-xs text-slate-400 mb-2 mt-4">
+                        <span>Monthly Installments</span>
+                      </div>
+                      
+                      <div className="flex gap-1 w-full h-8">
+                        {monthsList.map((m, index) => {
+                          const amountPaidTowardsThisMonth = Math.max(0, Math.min(loan.monthlyInstallment, loan.paidAmount - (index * loan.monthlyInstallment)));
+                          const monthFillPct = (amountPaidTowardsThisMonth / loan.monthlyInstallment) * 100;
+                          
+                          const fillColor = index % 2 === 0 ? "bg-indigo-500" : "bg-emerald-500";
+
+                          return (
+                            <div 
+                              key={index} 
+                              className="flex-1 rounded-sm relative bg-slate-800 overflow-hidden"
+                              title={`${m}: ${fmt(amountPaidTowardsThisMonth)} / ${fmt(loan.monthlyInstallment)}`}
+                            >
+                              <div 
+                                className={`absolute top-0 left-0 h-full ${fillColor} transition-all duration-500`}
+                                style={{ width: `${monthFillPct}%` }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className={`text-[10px] font-bold uppercase ${monthFillPct >= 50 ? "text-white" : "text-slate-400"}`}>
+                                  {m}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
