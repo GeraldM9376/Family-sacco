@@ -11,10 +11,16 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { idNumber, accountName, type, payerName, paidOn } = body;
-    const amount = Number(body.amount);
+    const { idNumber, payerName, paidOn } = body;
+    
+    const account1Amount = Number(body.account1Amount) || 0;
+    const account2Amount = Number(body.account2Amount) || 0;
+    const normalAmt = Number(body.normalAmt) || 0;
+    const emergencyAmt = Number(body.emergencyAmt) || 0;
 
-    if (!idNumber || !accountName || !type || isNaN(amount) || amount <= 0) {
+    const totalAmount = account1Amount + account2Amount + normalAmt + emergencyAmt;
+
+    if (!idNumber || !payerName || !paidOn || totalAmount <= 0) {
       return NextResponse.json({ error: "Invalid payment details." }, { status: 400 });
     }
 
@@ -26,42 +32,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid User ID. No account found." }, { status: 404 });
     }
 
-    // Find the target account (Account 1 or Account 2)
-    const targetAccount = user.accounts.find(a => a.name === accountName);
-    if (!targetAccount) {
-      return NextResponse.json({ error: "Account not found for this user." }, { status: 404 });
-    }
-
-    // Fetch loans belonging to this account to validate
-    const accountLoans = await prisma.loan.findMany({
-      where: { accountId: targetAccount.id, userId: user.id, status: "unpaid" },
+    // Fetch loans to validate
+    const userLoans = await prisma.loan.findMany({
+      where: { userId: user.id, status: "unpaid" },
     });
 
-    const normalDebt = accountLoans
-      .filter(l => l.type === "normal")
-      .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
-    
-    const emergencyDebt = accountLoans
-      .filter(l => l.type === "emergency")
-      .reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+    const normalDebt = userLoans.filter(l => l.type === "normal").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
+    const emergencyDebt = userLoans.filter(l => l.type === "emergency").reduce((sum, l) => sum + (l.amountToPay - l.paidAmount), 0);
 
-    if (type === "normal" && amount > normalDebt) {
+    if (normalAmt > normalDebt) {
       return NextResponse.json({ error: `Cannot pay more than normal loan debt (KES ${normalDebt}).` }, { status: 400 });
     }
-    if (type === "emergency" && amount > emergencyDebt) {
+    if (emergencyAmt > emergencyDebt) {
       return NextResponse.json({ error: `Cannot pay more than emergency loan debt (KES ${emergencyDebt}).` }, { status: 400 });
     }
 
+    const firstAcc = user.accounts[0];
+    if (!firstAcc) return NextResponse.json({ error: "User has no accounts." }, { status: 400 });
+
+    const breakdown = JSON.stringify({
+      account1: account1Amount,
+      account2: account2Amount,
+      normal: normalAmt,
+      emergency: emergencyAmt
+    });
+
     await prisma.$transaction(async (tx: any) => {
-      const breakdown = JSON.stringify({ [type]: amount });
-      
-      // 1. Create the payment record
+      // 1. Create the payment record as APPROVED immediately
       await tx.payment.create({
         data: {
           userId: user.id,
-          accountId: targetAccount.id,
+          accountId: firstAcc.id,
           breakdown,
-          totalAmount: amount,
+          totalAmount,
           method: "admin",
           payerName: payerName.toUpperCase(),
           paidOn: new Date(paidOn),
@@ -70,17 +73,31 @@ export async function POST(req: Request) {
         },
       });
 
-      // 2. Update the correct account balance for savings
-      if (type === "savings") {
-        await tx.account.update({
-          where: { id: targetAccount.id },
-          data: { balance: { increment: amount } },
-        });
-      } 
-      // 3. Distribute to loans if it's a loan repayment
-      else if (type === "normal" || type === "emergency") {
-        await distributeLoanPayment(tx, targetAccount.id, type, amount);
+      // 2. Update Account 1 Savings
+      if (account1Amount > 0) {
+        const acc1 = user.accounts.find(a => a.name === "Account 1");
+        if (acc1) {
+          await tx.account.update({
+            where: { id: acc1.id },
+            data: { balance: { increment: account1Amount } },
+          });
+        }
       }
+
+      // 3. Update Account 2 Savings
+      if (account2Amount > 0) {
+        const acc2 = user.accounts.find(a => a.name === "Account 2");
+        if (acc2) {
+          await tx.account.update({
+            where: { id: acc2.id },
+            data: { balance: { increment: account2Amount } },
+          });
+        }
+      }
+
+      // 4. Distribute Loan Payments
+      if (normalAmt > 0) await distributeLoanPayment(tx, user.id, "normal", normalAmt);
+      if (emergencyAmt > 0) await distributeLoanPayment(tx, user.id, "emergency", emergencyAmt);
     });
 
     return NextResponse.json({ ok: true });
@@ -89,11 +106,10 @@ export async function POST(req: Request) {
   }
 }
 
-// Helper to update specific loans inside a specific account
-async function distributeLoanPayment(tx: any, accountId: string, type: string, amountPaid: number) {
+async function distributeLoanPayment(tx: any, userId: string, type: string, amountPaid: number) {
   let remaining = amountPaid;
   const activeLoans = await tx.loan.findMany({
-    where: { accountId, type, status: "unpaid" },
+    where: { userId, type, status: "unpaid" },
     orderBy: { dueDate: "asc" },
   });
 
