@@ -92,7 +92,7 @@ export default async function AdminDashboard({
         </form>
       </div>
 
-      {/* LIVE Active Password Reset Codes */}
+      {/* Active Password Reset Codes */}
       <OtpList initialOtps={activeOtps} />
 
       {/* Master Metrics */}
@@ -128,17 +128,31 @@ export default async function AdminDashboard({
                 return (
                   <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-slate-800 p-5 bg-slate-950">
                     <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <p className="font-bold text-white">{fmt(p.totalAmount)}</p>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 uppercase border border-slate-700">{p.account?.name}</span>
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <p className="font-bold text-white text-lg">{fmt(p.totalAmount)}</p>
+                        {p.account?.name && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 uppercase border border-slate-700">
+                            {p.account.name}
+                          </span>
+                        )}
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                          p.method === "self" 
+                            ? "bg-blue-500/20 text-blue-400 border-blue-500/30" 
+                            : "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                        }`}>
+                          {p.method === "self" ? "Paid via Paybill" : "Sent to Admin"}
+                        </span>
                       </div>
-                      <p className="text-sm text-slate-400"><span className="text-slate-200">{p.user.fullName}</span> • ID: {p.user.idNumber}</p>
-                      <div className="text-xs text-slate-400 mt-1 flex gap-3">
-                        {breakdown?.savings > 0 && <span>Savings: {fmt(breakdown.savings)}</span>}
-                        {breakdown?.normal > 0 && <span>Normal: {fmt(breakdown.normal)}</span>}
-                        {breakdown?.emergency > 0 && <span>Emergency: {fmt(breakdown.emergency)}</span>}
+                      <p className="text-sm text-slate-400"><span className="text-slate-200 font-semibold">{p.user.fullName}</span> • ID: {p.user.idNumber}</p>
+                      <div className="text-xs text-slate-400 mt-2 flex gap-3 bg-slate-900 p-2 rounded-lg inline-block">
+                        {breakdown?.savings > 0 && <span>Savings: <span className="text-white">{fmt(breakdown.savings)}</span></span>}
+                        {breakdown?.normal > 0 && <span>Normal: <span className="text-white">{fmt(breakdown.normal)}</span></span>}
+                        {breakdown?.emergency > 0 && <span>Emergency: <span className="text-white">{fmt(breakdown.emergency)}</span></span>}
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">Paid: {fmtDate(p.paidOn)}</p>
+                      <div className="text-xs text-slate-500 mt-2 flex flex-col gap-1">
+                        <span>Payer Name: <span className="text-slate-300 font-semibold">{p.payerName}</span></span>
+                        <span>Date Paid: <span className="text-slate-300">{fmtDate(p.paidOn)}</span></span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <form action={async () => { "use server"; await approvePayment(p.id); }}>
