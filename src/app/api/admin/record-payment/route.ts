@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const totalAmount = account1Amount + account2Amount + normalAmt + emergencyAmt;
 
     // Specific Validation Errors
-    if (!idNumber) return NextResponse.json({ error: "User ID Number is required." }, { status: 400 });
+    if (!idNumber) return NextResponse.json({ error: "User Member Number is required." }, { status: 400 });
     if (!payerName) return NextResponse.json({ error: "Payer name is required." }, { status: 400 });
     if (!paidOn) return NextResponse.json({ error: "Date paid is required." }, { status: 400 });
     if (totalAmount <= 0) return NextResponse.json({ error: "Total amount must be greater than zero." }, { status: 400 });

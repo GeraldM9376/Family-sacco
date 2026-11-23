@@ -34,7 +34,7 @@ export async function sendWelcomeEmail(email: string, name: string, password: st
           <p style="margin:0;font-size:14px;color:#6b7280">Your Password</p>
           <p style="margin:8px 0 0 0;font-size:24px;font-weight:bold;color:#4338ca;">${password}</p>
         </div>
-        <p>You can now log in using your ID Number and this password.</p>
+        <p>You can now log in using your Member Number and this password.</p>
       </div>
     `,
   });

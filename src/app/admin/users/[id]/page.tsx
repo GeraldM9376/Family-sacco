@@ -31,7 +31,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
       <div className="rounded-3xl bg-slate-900 p-8 border border-slate-800 shadow-xl">
         <h1 className="text-3xl font-extrabold text-white">{user.fullName}</h1>
         <div className="mt-4 flex flex-wrap gap-6 text-sm text-slate-400">
-          <p>ID: <span className="text-white font-mono">{user.idNumber}</span></p>
+          <p>Member Number: <span className="text-white font-mono">{user.idNumber}</span></p>
           <p>Phone: <span className="text-white">{user.phone}</span></p>
           <p>Email: <span className="text-white">{user.email}</span></p>
           <p>Joined: <span className="text-white">{fmtDate(user.createdAt)}</span></p>

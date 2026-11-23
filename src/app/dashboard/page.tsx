@@ -103,6 +103,58 @@ export default async function Dashboard() {
 
   const grandTotal = user.accounts.reduce((sum: number, acc: any) => sum + acc.balance, 0);
 
+  // ==========================================
+  // YEAR HISTORY (ACCOUNT 2) LOGIC
+  // ==========================================
+  
+  // 1. Get all Account 2 payments
+  const acc2Payments = user.payments.filter((p: any) => {
+    try {
+      const b = JSON.parse(p.breakdown || "{}");
+      return b.account2 > 0;
+    } catch { return false; }
+  }).map((p: any) => {
+    const b = JSON.parse(p.breakdown || "{}");
+    return { date: new Date(p.paidOn), amount: Number(b.account2) };
+  });
+
+  // 2. Determine current SACCO year boundaries (Dec 1 -> Nov 30)
+  let currentSaccoYearStart = new Date(now.getFullYear(), 11, 1); // Dec 1 this year
+  if (now.getMonth() < 11) { // If before December, the year started last year
+    currentSaccoYearStart = new Date(now.getFullYear() - 1, 11, 1);
+  }
+  const currentSaccoYearLabel = currentSaccoYearStart.getFullYear(); // e.g., 2025
+
+  // 3. Group payments by SACCO year
+  const yearDataMap: Record<number, number> = {};
+  acc2Payments.forEach(p => {
+    let y = p.date.getFullYear();
+    // If the payment happened in Jan-Nov, it belongs to the previous year's SACCO cycle
+    if (p.date.getMonth() < 11) {
+      y -= 1;
+    }
+    if (!yearDataMap[y]) yearDataMap[y] = 0;
+    yearDataMap[y] += p.amount;
+  });
+
+  // 4. Create the list of Year History bars
+  const yearHistoryList = Object.keys(yearDataMap).map(Number).sort((a, b) => a - b).map(year => {
+    return {
+      year,
+      total: yearDataMap[year],
+      isLive: year === currentSaccoYearLabel,
+    };
+  });
+
+  // If the current year has no payments yet, add a 0-bar for it so it shows live
+  if (!yearHistoryList.find(y => y.year === currentSaccoYearLabel)) {
+    yearHistoryList.push({ year: currentSaccoYearLabel, total: 0, isLive: true });
+  }
+
+  const maxYearTotal = Math.max(...yearHistoryList.map(y => y.total), 1);
+  const previousYearData = yearHistoryList.find(y => y.year === currentSaccoYearLabel - 1);
+  const previousYearTotal = previousYearData ? previousYearData.total : 0;
+
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-10 space-y-8">
       {/* Header */}
@@ -113,7 +165,7 @@ export default async function Dashboard() {
           </h1>
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <span className="px-3 py-1 bg-slate-900 rounded-md text-xs font-mono text-slate-300 border border-slate-800">
-              ID: {user.idNumber}
+              Member Number: {user.idNumber}
             </span>
             <span className="px-3 py-1 bg-slate-900 rounded-md text-xs text-slate-300 border border-slate-800">
               Phone: {user.phone}
@@ -216,6 +268,54 @@ export default async function Dashboard() {
         </div>
       </div>
 
+      {/* YEAR HISTORY GRAPH (ACCOUNT 2) */}
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-white">Year History (Account 2 Earnings)</h2>
+          <p className="text-xs text-slate-500 mt-1">Gross Account 2 deposits per SACCO year (Dec 1 - Nov 30).</p>
+        </div>
+        
+        <div className="flex items-end gap-6 h-64 border-b border-slate-800 pb-2 px-2 overflow-x-auto">
+          {yearHistoryList.map((y) => {
+            const pct = (y.total / maxYearTotal) * 100;
+            
+            // Color logic: Current year turns emerald if it beats the previous year
+            let barColor = "bg-slate-700";
+            if (y.isLive) {
+              if (previousYearTotal > 0 && y.total > previousYearTotal) {
+                barColor = "bg-emerald-500";
+              } else {
+                barColor = "bg-indigo-500";
+              }
+            } else if (y.total > 0) {
+              barColor = "bg-slate-500";
+            }
+
+            return (
+              <div key={y.year} className="flex flex-col items-center justify-end h-full flex-1 min-w-[60px] group relative">
+                {/* Tooltip */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700 whitespace-nowrap z-10 pointer-events-none">
+                  {fmt(y.total)}
+                </div>
+                
+                {/* Bar */}
+                <div className="w-full max-w-[50px] bg-slate-800/50 rounded-t-md relative flex items-end justify-center" style={{ height: '100%' }}>
+                  <div 
+                    className={`w-full rounded-t-md transition-all duration-500 ${barColor}`} 
+                    style={{ height: `${Math.max(pct, 2)}%` }} // 2% minimum so a 0 bar is still visible
+                  />
+                </div>
+                
+                {/* Label */}
+                <span className={`mt-2 text-xs font-bold ${y.isLive ? 'text-white' : 'text-slate-400'}`}>
+                  {y.year} {y.isLive && "(Live)"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Active Loans */}
       <div>
         <h2 className="text-lg font-bold text-white mb-4">Active Loans</h2>
@@ -232,8 +332,13 @@ export default async function Dashboard() {
 
               const issuedDate = new Date(loan.issuedOn);
               const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+              
+              // EMERGENCY LOAN 4-MONTH FIX
+              const isEmergency = loan.type === "emergency";
+              const totalMonths = isEmergency ? 4 : loan.periodMonths;
               const monthsList = [];
-              for (let i = 0; i < loan.periodMonths; i++) {
+              
+              for (let i = 0; i < totalMonths; i++) {
                 const d = new Date(issuedDate);
                 d.setMonth(d.getMonth() + i);
                 monthsList.push(monthNames[d.getMonth()]);
@@ -244,7 +349,11 @@ export default async function Dashboard() {
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <span className="font-bold text-white capitalize">{loan.type} Loan</span>
-                      <p className="text-xs text-slate-500 mt-1">Monthly Installment: <span className="text-white">{fmt(loan.monthlyInstallment)}</span></p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {isEmergency 
+                          ? `Interest/month: ${fmt(loan.monthlyInstallment)} | Month 4 includes Principal: ${fmt(loan.principal)}` 
+                          : `Monthly Installment: ${fmt(loan.monthlyInstallment)}`}
+                      </p>
                     </div>
                     <span className="text-sm font-bold text-red-400">{fmt(remaining)} Left</span>
                   </div>
@@ -265,16 +374,42 @@ export default async function Dashboard() {
                       
                       <div className="flex gap-1 w-full h-8">
                         {monthsList.map((m, index) => {
-                          const amountPaidTowardsThisMonth = Math.max(0, Math.min(loan.monthlyInstallment, loan.paidAmount - (index * loan.monthlyInstallment)));
-                          const monthFillPct = (amountPaidTowardsThisMonth / loan.monthlyInstallment) * 100;
+                          // Emergency Loan specific math: Month 4 includes principal
+                          let dueForThisMonth = loan.monthlyInstallment;
+                          let isPrincipalMonth = false;
+
+                          if (isEmergency) {
+                            if (index === 3) {
+                              dueForThisMonth = loan.monthlyInstallment + loan.principal;
+                              isPrincipalMonth = true;
+                            }
+                          }
+
+                          // Calculate how much is paid towards this specific month
+                          let amountPaidTowardsThisMonth = 0;
+                          if (isEmergency) {
+                            if (index === 3) {
+                              // If they've paid past the first 3 months of interest, apply the rest here
+                              const prevMonthsTotal = loan.monthlyInstallment * 3;
+                              amountPaidTowardsThisMonth = Math.max(0, loan.paidAmount - prevMonthsTotal);
+                            } else {
+                              amountPaidTowardsThisMonth = Math.max(0, Math.min(loan.monthlyInstallment, loan.paidAmount - (index * loan.monthlyInstallment)));
+                            }
+                          } else {
+                            amountPaidTowardsThisMonth = Math.max(0, Math.min(loan.monthlyInstallment, loan.paidAmount - (index * loan.monthlyInstallment)));
+                          }
                           
-                          const fillColor = index % 2 === 0 ? "bg-indigo-500" : "bg-emerald-500";
+                          const monthFillPct = (amountPaidTowardsThisMonth / dueForThisMonth) * 100;
+                          
+                          // Different colors for emergency principal month to stand out
+                          let fillColor = index % 2 === 0 ? "bg-indigo-500" : "bg-emerald-500";
+                          if (isEmergency) fillColor = isPrincipalMonth ? "bg-amber-500" : "bg-indigo-500";
 
                           return (
                             <div 
                               key={index} 
                               className="flex-1 rounded-sm relative bg-slate-800 overflow-hidden"
-                              title={`${m}: ${fmt(amountPaidTowardsThisMonth)} / ${fmt(loan.monthlyInstallment)}`}
+                              title={`${m}: ${fmt(amountPaidTowardsThisMonth)} / ${fmt(dueForThisMonth)}${isPrincipalMonth ? " (Includes Principal)" : ""}`}
                             >
                               <div 
                                 className={`absolute top-0 left-0 h-full ${fillColor} transition-all duration-500`}
@@ -282,7 +417,7 @@ export default async function Dashboard() {
                               />
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <span className={`text-[10px] font-bold uppercase ${monthFillPct >= 50 ? "text-white" : "text-slate-400"}`}>
-                                  {m}
+                                  {isPrincipalMonth ? `${m} (P)` : m}
                                 </span>
                               </div>
                             </div>

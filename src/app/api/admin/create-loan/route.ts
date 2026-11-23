@@ -15,9 +15,8 @@ export async function POST(req: Request) {
     
     const principal = Number(body.principal);
     const amountToPay = Number(body.amountToPay);
-    const periodMonths = Number(body.periodMonths);
 
-    if (!idNumber || !type || isNaN(principal) || isNaN(amountToPay) || isNaN(periodMonths)) {
+    if (!idNumber || !type || isNaN(principal) || isNaN(amountToPay)) {
       return NextResponse.json({ error: "Invalid loan details." }, { status: 400 });
     }
 
@@ -36,7 +35,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User has no accounts setup." }, { status: 400 });
     }
 
-    const monthlyInstallment = amountToPay / periodMonths;
+    let periodMonths = 1;
+    let monthlyInstallment = amountToPay;
+
+    if (type === "emergency") {
+      // 4 fixed months for emergency loans
+      periodMonths = 4;
+      const interest = amountToPay - principal;
+      // Interest is split equally across the 4 months
+      monthlyInstallment = interest / 4; 
+    } else {
+      // Standard loan logic
+      periodMonths = Number(body.periodMonths) || 1;
+      monthlyInstallment = amountToPay / periodMonths;
+    }
 
     await prisma.loan.create({
       data: {

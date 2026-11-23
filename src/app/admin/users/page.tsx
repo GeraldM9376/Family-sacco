@@ -40,7 +40,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
             <thead>
               <tr className="bg-slate-950 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-widest">
                 <th className="p-5">Name</th>
-                <th className="p-5">ID Number</th>
+                <th className="p-5">Member Number</th>
                 <th className="p-5">Phone</th>
                 <th className="p-5 text-right">Total Savings</th>
                 <th className="p-5 text-right">Total Debt</th>

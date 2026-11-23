@@ -25,7 +25,7 @@ export default async function AdminWithdrawalsPage() {
               <div key={w.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <p className="font-bold text-white text-lg">{fmt(w.totalAmount)}</p>
-                  <p className="text-sm text-slate-300">{w.user.fullName} • ID: {w.user.idNumber}</p>
+                  <p className="text-sm text-slate-300">{w.user.fullName} • Member Number: {w.user.idNumber}</p>
                   
                   <div className="text-xs text-slate-400 mt-2 flex flex-wrap gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
                     {w.account1Amt > 0 && <span>Acc 1: <span className="text-white">{fmt(w.account1Amt)}</span></span>}

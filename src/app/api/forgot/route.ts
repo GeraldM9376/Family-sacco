@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Too many attempts." }, { status: 429 });
 
   const { idNumber } = await req.json();
-  if (!idNumber) return NextResponse.json({ error: "ID Number is required." }, { status: 400 });
+  if (!idNumber) return NextResponse.json({ error: "Member Number is required." }, { status: 400 });
 
   const user = await prisma.user.findUnique({ where: { idNumber } });
   if (!user) return NextResponse.json({ error: "No account found with that ID." }, { status: 404 });

@@ -60,7 +60,7 @@ export default function OtpList({ initialOtps }: { initialOtps: any[] }) {
               <div key={otp.id} className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-indigo-500/20">
                 <div>
                   <p className="font-bold text-white">{otp.user.fullName}</p>
-                  <p className="text-xs text-slate-400 font-mono">ID: {otp.user.idNumber}</p>
+                  <p className="text-xs text-slate-400 font-mono">Member Number: {otp.user.idNumber}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-mono font-extrabold text-indigo-300 tracking-widest">{otp.code}</p>

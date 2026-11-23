@@ -40,7 +40,7 @@ export default function AdminPaymentPage() {
         
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-slate-300">User ID Number</label>
+            <label className="mb-1.5 block text-sm font-bold text-slate-300">User Member Number</label>
             <input name="idNumber" required placeholder="e.g. 12345678" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
 

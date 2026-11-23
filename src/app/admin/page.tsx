@@ -142,7 +142,7 @@ export default async function AdminDashboard({
                           {p.method === "self" ? "Paid via Paybill" : "Sent to Admin"}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-400"><span className="text-slate-200 font-semibold">{p.user.fullName}</span> • ID: {p.user.idNumber}</p>
+                      <p className="text-sm text-slate-400"><span className="text-slate-200 font-semibold">{p.user.fullName}</span> • Member Number: {p.user.idNumber}</p>
                       <div className="text-xs text-slate-400 mt-2 flex flex-wrap gap-3 bg-slate-900 p-2 rounded-lg">
                         {breakdown?.account1 > 0 && <span>Acc 1: <span className="text-white">{fmt(breakdown.account1)}</span></span>}
                         {breakdown?.account2 > 0 && <span>Acc 2: <span className="text-white">{fmt(breakdown.account2)}</span></span>}
@@ -203,7 +203,7 @@ export default async function AdminDashboard({
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <p className="font-bold text-slate-200 text-sm">{l.userName}</p>
-                      <p className="text-xs text-slate-500">ID: {l.idNumber} • {l.type}</p>
+                      <p className="text-xs text-slate-500">Member Number: {l.idNumber} • {l.type}</p>
                     </div>
                     <span className="text-[10px] font-bold bg-slate-900 text-slate-300 px-2 py-1 rounded border border-slate-800">Due {fmtDate(l.dueDate)}</span>
                   </div>

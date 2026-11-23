@@ -97,11 +97,11 @@ export default function ForgotPage() {
         {step === 1 ? (
           <>
             <p className="mb-6 text-sm text-slate-400 text-center">
-              Enter your ID Number. A reset code will be generated for the Admin to give you.
+              Enter your Member Number. A reset code will be generated for the Admin to give you.
             </p>
             <form onSubmit={sendCode} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-300">Your ID Number</label>
+                <label className="mb-1.5 block text-sm font-bold text-slate-300">Your Member Number</label>
                 <input type="text" placeholder="e.g. 12345678" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
               </div>

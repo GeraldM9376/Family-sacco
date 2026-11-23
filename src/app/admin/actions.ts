@@ -89,11 +89,10 @@ export async function createLoan(formData: FormData) {
   const type = formData.get("type") as string; 
   const principal = Number(formData.get("principal"));
   const amountToPay = Number(formData.get("amountToPay"));
-  const periodMonths = Number(formData.get("periodMonths"));
   const issuedOn = new Date(formData.get("issuedOn") as string);
   const dueDate = new Date(formData.get("dueDate") as string);
 
-  if (!idNumber || !type || isNaN(principal) || isNaN(amountToPay) || isNaN(periodMonths)) {
+  if (!idNumber || !type || isNaN(principal) || isNaN(amountToPay)) {
     throw new Error("Invalid loan details");
   }
 
@@ -106,7 +105,20 @@ export async function createLoan(formData: FormData) {
   const firstAcc = user.accounts[0];
   if (!firstAcc) throw new Error("User has no accounts.");
 
-  const monthlyInstallment = amountToPay / periodMonths;
+  let periodMonths = 1;
+  let monthlyInstallment = amountToPay;
+
+  if (type === "emergency") {
+    // 4 fixed months for emergency loans
+    periodMonths = 4;
+    const interest = amountToPay - principal;
+    // Interest is split equally across the 4 months
+    monthlyInstallment = interest / 4; 
+  } else {
+    // Standard loan logic
+    periodMonths = Number(formData.get("periodMonths")) || 1;
+    monthlyInstallment = amountToPay / periodMonths;
+  }
 
   await prisma.loan.create({
     data: {
@@ -141,7 +153,7 @@ export async function adminRecordPayment(formData: FormData) {
   const totalAmount = account1Amount + account2Amount + normalAmt + emergencyAmt;
 
   // Specific Validation Errors
-  if (!idNumber) throw new Error("User ID Number is required.");
+  if (!idNumber) throw new Error("User Member Number is required.");
   if (!payerName) throw new Error("Payer name is required.");
   if (isNaN(paidOn.getTime())) throw new Error("Please select a valid Date Paid.");
   if (totalAmount <= 0) throw new Error("Please enter an amount greater than 0.");
