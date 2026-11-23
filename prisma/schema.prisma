@@ -9,7 +9,7 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   fullName      String
-  email         String    @unique
+  email         String?    @unique
   idNumber      String    @unique
   phone         String
   passwordHash  String
@@ -21,6 +21,7 @@ model User {
   loans    Loan[]
   otp      Otp?
   withdrawals Withdrawal[]
+  yearHistories YearHistory[]
 }
 
 model Account {
@@ -102,4 +103,15 @@ model Withdrawal {
   approvedAt    DateTime? // NEW: Records exact approval time
   status        String   @default("pending")
   createdAt     DateTime @default(now()) // Records exact request time
+}
+
+model YearHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  year         Int      
+  account2Total Float   @default(0)
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, year])
 }

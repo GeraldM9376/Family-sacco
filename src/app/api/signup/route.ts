@@ -13,20 +13,36 @@ export async function POST(req: Request) {
 
   if (typeof fullName !== "string" || fullName !== fullName.toUpperCase() || !/^[A-Z\s]+$/.test(fullName))
     return NextResponse.json({ error: "Full names must be in CAPS." }, { status: 400 });
-  if (!/^\S+@\S+\.\S+$/.test(email))
+    
+  // Only validate email if it was actually provided
+  if (email && email.trim() !== "" && !/^\S+@\S+\.\S+$/.test(email))
     return NextResponse.json({ error: "Enter a valid email." }, { status: 400 });
-  if (!/^\d{6,10}$/.test(idNumber))
-    return NextResponse.json({ error: "ID number must be 6-10 digits." }, { status: 400 });
+    
+  // Updated to 3-10 digits
+  if (!/^\d{3,10}$/.test(idNumber))
+    return NextResponse.json({ error: "Member Number must be 3-10 digits." }, { status: 400 });
+    
   if (!/^\+254[17]\d{8}$/.test(phone))
     return NextResponse.json({ error: "Phone must be +2547XXXXXXXX." }, { status: 400 });
+    
   if (password !== confirm)
     return NextResponse.json({ error: "Passwords do not match." }, { status: 400 });
+    
   if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}$/.test(password))
     return NextResponse.json({ error: "Weak password." }, { status: 400 });
 
-  const exists = await prisma.user.findFirst({ where: { OR: [{ email }, { idNumber }] } });
+  // Check if user exists. If email is empty, just check by idNumber.
+  const exists = await prisma.user.findFirst({ 
+    where: { 
+      OR: [
+        ...(email && email.trim() !== "" ? [{ email }] : []),
+        { idNumber }
+      ] 
+    } 
+  });
+  
   if (exists)
-    return NextResponse.json({ error: "Email or ID already registered." }, { status: 409 });
+    return NextResponse.json({ error: "Member Number or Email already registered." }, { status: 409 });
 
   const passwordHash = await bcrypt.hash(password, 10);
   
@@ -34,7 +50,8 @@ export async function POST(req: Request) {
   await prisma.user.create({ 
     data: { 
       fullName, 
-      email, 
+      // Save null if email is empty
+      email: email && email.trim() !== "" ? email : null, 
       idNumber, 
       phone, 
       passwordHash,
@@ -47,7 +64,10 @@ export async function POST(req: Request) {
     } 
   });
   
-  await sendWelcomeEmail(email, fullName, password);
+  // Only send welcome email if they provided an email address
+  if (email && email.trim() !== "") {
+    await sendWelcomeEmail(email, fullName, password);
+  }
 
   return NextResponse.json({ ok: true });
 }

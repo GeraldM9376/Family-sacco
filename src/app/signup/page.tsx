@@ -37,8 +37,8 @@ export default function SignupPage() {
   };
 
   const isValidName = /^[A-Z\s]+$/.test(form.fullName) && form.fullName.length > 2;
-  const isValidEmail = /^\S+@\S+\.\S+$/.test(form.email);
-  const isValidId = /^\d{6,10}$/.test(form.idNumber);
+  const isValidEmail = form.email === "" ? true : /^\S+@\S+\.\S+$/.test(form.email);
+  const isValidId = /^\d{3,10}$/.test(form.idNumber);
   const isValidPhone = /^\+254[17]\d{8}$/.test(form.phone);
   const isValidPass = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}$/.test(form.password);
   const doPasswordsMatch = form.password === form.confirm && form.confirm !== "";
@@ -61,7 +61,7 @@ export default function SignupPage() {
     // Show specific error if form is invalid
     if (!isValidName) return setMsg({ text: "Full name must be in CAPS and at least 3 characters.", type: "error" });
     if (!isValidEmail) return setMsg({ text: "Enter a valid email address.", type: "error" });
-    if (!isValidId) return setMsg({ text: "ID number must be 6-10 digits.", type: "error" });
+    if (!isValidId) return setMsg({ text: "Member Number must be 3-10 digits.", type: "error" });
     if (!isValidPhone) return setMsg({ text: "Phone number must be +2547XXXXXXXX or +2541XXXXXXXX.", type: "error" });
     if (!isValidPass) return setMsg({ text: "Password must be 8+ chars with Uppercase, Lowercase, Number, and Symbol.", type: "error" });
     if (!doPasswordsMatch) return setMsg({ text: "Passwords do not match.", type: "error" });
@@ -79,7 +79,7 @@ export default function SignupPage() {
 
     if (!res.ok) return setMsg({ text: data.error, type: "error" });
     
-    setMsg({ text: "Account created! Password sent to your email. Redirecting...", type: "success" });
+    setMsg({ text: "Account created! Redirecting...", type: "success" });
     setTimeout(() => router.push("/login"), 2500);
   }
 
@@ -108,11 +108,11 @@ export default function SignupPage() {
             {form.fullName && !isValidName && <p className="text-xs text-red-400 mt-1">Only CAPS letters and spaces allowed.</p>}
           </div>
 
-          {/* Email */}
+          {/* Email (Optional) */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-300">Email Address</label>
+            <label className="mb-1 block text-sm font-medium text-slate-300">Email Address (Optional)</label>
             <div className="relative">
-              <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="john@gmail.com" required
+              <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="john@gmail.com"
                 className={`w-full rounded-lg border bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-indigo-500 ${form.email ? (isValidEmail ? 'border-emerald-500' : 'border-red-500') : 'border-slate-700'}`} />
               <InputStatus isValid={isValidEmail} value={form.email} />
             </div>
@@ -123,9 +123,9 @@ export default function SignupPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">Member Number</label>
-              <input name="idNumber" value={form.idNumber} onChange={handleChange} placeholder=" e.g.12345678" required
+              <input name="idNumber" value={form.idNumber} onChange={handleChange} placeholder=" e.g.123" required
                 className={`w-full rounded-lg border bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-indigo-500 ${form.idNumber ? (isValidId ? 'border-emerald-500' : 'border-red-500') : 'border-slate-700'}`} />
-              {form.idNumber && !isValidId && <p className="text-xs text-red-400 mt-1">Must be 6-10 digits.</p>}
+              {form.idNumber && !isValidId && <p className="text-xs text-red-400 mt-1">Must be 3-10 digits.</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">Phone Number</label>
