@@ -123,14 +123,14 @@ export default function SignupPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">Member Number</label>
-              <input name="idNumber" value={form.idNumber} onChange={handleChange} placeholder="12345678" required
+              <input name="idNumber" value={form.idNumber} onChange={handleChange} placeholder=" e.g.12345678" required
                 className={`w-full rounded-lg border bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-indigo-500 ${form.idNumber ? (isValidId ? 'border-emerald-500' : 'border-red-500') : 'border-slate-700'}`} />
               {form.idNumber && !isValidId && <p className="text-xs text-red-400 mt-1">Must be 6-10 digits.</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">Phone Number</label>
               <div className="relative">
-                <input name="phone" value={form.phone} onChange={handleChange} placeholder="+254712345678" required
+                <input name="phone" value={form.phone} onChange={handleChange} placeholder="e.g.+254712345678" required
                   className={`w-full rounded-lg border bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-indigo-500 ${form.phone ? (isValidPhone ? 'border-emerald-500' : 'border-red-500') : 'border-slate-700'}`} />
                 <InputStatus isValid={isValidPhone} value={form.phone} />
               </div>
