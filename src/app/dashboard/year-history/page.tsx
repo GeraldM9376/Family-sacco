@@ -28,10 +28,13 @@ export default async function YearHistoryPage() {
   
   if (firstPayment && acc2) {
     let startYear = new Date(firstPayment.paidOn).getFullYear();
+    // If first payment was Dec, the cycle ends the NEXT year.
     if (new Date(firstPayment.paidOn).getMonth() >= 11) startYear += 1;
     
+    // Loop from the very first payment year up to the current year
     for (let y = startYear; y < currentSaccoYearLabel; y++) {
       if (!closedYears.includes(y)) {
+        // Cycle for label "2024" runs from Dec 1, 2023 to Nov 30, 2024
         const cycleStart = new Date(y - 1, 11, 1);
         const cycleEnd = new Date(y, 11, 1);
         
@@ -42,14 +45,17 @@ export default async function YearHistoryPage() {
           try { const b = JSON.parse(p.breakdown || "{}"); if (b.account2 > 0) yearAcc2Total += Number(b.account2); } catch {}
         });
 
-        await prisma.yearHistory.create({ data: { userId, year: y, account2Total: yearAcc2Total } });
+        // Only save to DB if there was actually money deposited that year
+        if (yearAcc2Total > 0) {
+          await prisma.yearHistory.create({ data: { userId, year: y, account2Total: yearAcc2Total } });
 
-        if (acc2.balance > 0) {
-          await prisma.$transaction([
-            prisma.account.update({ where: { id: acc2.id }, data: { balance: 0 } }),
-            prisma.withdrawal.create({ data: { userId, account2Amt: acc2.balance, totalAmount: acc2.balance, method: "Year End Reset", methodDetails: `Auto-archived for year ${y}`, paidOn: cycleEnd, approvedAt: cycleEnd, status: "approved" } })
-          ]);
-          acc2.balance = 0;
+          if (acc2.balance > 0) {
+            await prisma.$transaction([
+              prisma.account.update({ where: { id: acc2.id }, data: { balance: 0 } }),
+              prisma.withdrawal.create({ data: { userId, account2Amt: acc2.balance, totalAmount: acc2.balance, method: "Year End Reset", methodDetails: `Auto-archived for year ${y}`, paidOn: cycleEnd, approvedAt: cycleEnd, status: "approved" } })
+            ]);
+            acc2.balance = 0;
+          }
         }
       }
     }
@@ -64,8 +70,10 @@ export default async function YearHistoryPage() {
   });
   if (!user) return <p className="text-white p-8">Loading…</p>;
 
+  // Build the list of years
   const yearHistoryList = user.yearHistories.map(y => ({ year: y.year, total: y.account2Total, isLive: false, payments: [] as any[] }));
   
+  // Add live year
   const currentYearStart = new Date(currentSaccoYearLabel - 1, 11, 1);
   const currentYearPayments = user.payments.filter(p => new Date(p.paidOn) >= currentYearStart && new Date(p.paidOn) < new Date(currentSaccoYearLabel, 11, 1));
   
@@ -80,8 +88,11 @@ export default async function YearHistoryPage() {
       } 
     } catch {}
   }
+  
+  // Only add the live year if it has payments OR if it's the current year we are in
   yearHistoryList.push({ year: currentSaccoYearLabel, total: liveYearTotal, isLive: true, payments: livePayments });
 
+  // Attach payments to closed years for the stacked bars
   user.payments.forEach(p => {
     try {
       const b = JSON.parse(p.breakdown || "{}");
@@ -110,10 +121,9 @@ export default async function YearHistoryPage() {
 
       <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8">
         
-        {/* Bar Chart Area - Using flex-1 for even spacing */}
+        {/* Bar Chart Area */}
         <div className="flex items-end justify-around gap-4 h-80 pb-4 border-b border-slate-800">
           {yearHistoryList.map((y, index) => {
-            // Calculate height percentage (0% if amount is 0)
             const pct = (y.total / maxYearTotal) * 100;
             let barColor = y.isLive ? "bg-indigo-500" : colors[index % colors.length];
 
@@ -123,12 +133,11 @@ export default async function YearHistoryPage() {
                 {/* The Bar Container */}
                 <div className="w-full bg-slate-800/50 rounded-t-lg relative flex flex-col justify-end" style={{ height: '100%' }}>
                   
-                  {/* The Colored Bar - height strictly based on amount */}
+                  {/* The Colored Bar */}
                   <div className={`w-full rounded-t-lg transition-all duration-700 ${barColor} flex flex-col-reverse`} style={{ height: `${pct}%` }}>
                     
-                    {/* Stacked Payments inside the bar */}
+                    {/* Stacked Payments */}
                     {y.payments.map((payment: any, pIndex: number) => {
-                      // The height of each block is proportional to the total
                       const paymentPct = (payment.amount / y.total) * 100;
                       return (
                         <div 
@@ -145,7 +154,6 @@ export default async function YearHistoryPage() {
                   </div>
                 </div>
                 
-                {/* Year Label */}
                 <div className="mt-4 text-center">
                   <p className={`text-lg font-bold ${y.isLive ? 'text-white' : 'text-slate-400'}`}>{y.year}</p>
                   <p className="text-xs text-slate-500 uppercase tracking-widest">{y.isLive ? "Current" : "Closed"}</p>
@@ -155,7 +163,7 @@ export default async function YearHistoryPage() {
           })}
         </div>
         
-        {/* Cards aligned underneath using the exact same flex-1 properties */}
+        {/* Cards aligned underneath */}
         <div className="flex justify-around gap-4 mt-8">
           {yearHistoryList.map((y, index) => {
             let textColor = y.isLive ? "text-indigo-400" : "text-slate-300";
