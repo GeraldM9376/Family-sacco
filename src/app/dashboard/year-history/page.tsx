@@ -11,7 +11,6 @@ export default async function YearHistoryPage() {
   const now = new Date();
 
   // Determine current SACCO year boundaries (Dec 1 -> Nov 30)
-  // If we are in November 2026, the year started Dec 1, 2025 and ends Nov 30, 2026.
   let currentSaccoYearStart = new Date(now.getFullYear(), 11, 1); 
   if (now.getMonth() < 11) { 
     currentSaccoYearStart = new Date(now.getFullYear() - 1, 11, 1);
@@ -30,19 +29,16 @@ export default async function YearHistoryPage() {
   
   if (firstPayment && acc2) {
     let startYear = new Date(firstPayment.paidOn).getFullYear();
-    // If first payment was Jan-Nov, it belonged to the previous cycle (which ends that same year)
-    // Wait, if paid in Jan 2026, cycle started Dec 2025, ends Nov 2026 (Label 2026).
-    // So if paid in Jan 2026, the label is 2026.
     if (new Date(firstPayment.paidOn).getMonth() < 11) {
-      // The cycle ends in the same year the payment was made
+      // Payment made Jan-Nov, cycle ends that same year
     } else {
-      // Payment made in Dec 2025, cycle ends in 2026
+      // Payment made in Dec, cycle ends next year
       startYear += 1;
     }
     
+    // Loop forward in time
     for (let y = startYear; y < currentSaccoYearLabel; y++) {
       if (!closedYears.includes(y)) {
-        // If label is 2026, the cycle started Dec 1, 2025
         const cycleStart = new Date(y - 1, 11, 1);
         const cycleEnd = new Date(y, 11, 1);
         
@@ -71,10 +67,7 @@ export default async function YearHistoryPage() {
 
   const yearHistoryList = user.yearHistories.map(y => ({ year: y.year, total: y.account2Total, isLive: false }));
   
-  // The current cycle started Dec 1 of the previous year
   const currentYearStart = new Date(currentSaccoYearLabel - 1, 11, 1);
-  
-  // Calculate the live total for the CURRENT year
   const currentYearPayments = user.payments.filter(p => new Date(p.paidOn) >= currentYearStart);
   let liveYearTotal = 0;
   currentYearPayments.forEach(p => {
@@ -85,9 +78,15 @@ export default async function YearHistoryPage() {
   
   const maxYearTotal = Math.max(...yearHistoryList.map(y => y.total), 1);
   
-  // Find the PREVIOUS year's total to compare against
-  const prevYearData = yearHistoryList.find(y => y.year === currentSaccoYearLabel - 1);
-  const previousYearTotal = prevYearData ? prevYearData.total : 0;
+  // Add a colorful palette for the bars
+  const colors = [
+    "bg-blue-500", 
+    "bg-emerald-500", 
+    "bg-purple-500", 
+    "bg-amber-500", 
+    "bg-rose-500", 
+    "bg-cyan-500"
+  ];
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-10 space-y-8">
@@ -97,17 +96,19 @@ export default async function YearHistoryPage() {
       </div>
 
       <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8">
-        <div className="flex items-end gap-8 h-80 pb-4 px-4 overflow-x-auto border-b border-slate-800">
-          {yearHistoryList.map((y) => {
+        {/* Changed gap-8 to gap-2 for closer spacing */}
+        <div className="flex items-end gap-2 h-80 pb-4 px-4 overflow-x-auto border-b border-slate-800">
+          {yearHistoryList.map((y, index) => {
             const pct = (y.total / maxYearTotal) * 100;
-            let barColor = "bg-slate-700";
-            if (y.isLive) barColor = (previousYearTotal > 0 && y.total > previousYearTotal) ? "bg-emerald-500" : "bg-indigo-500";
-            else if (y.total > 0) barColor = "bg-slate-500";
+            // Assign color based on index, but make sure current year is distinct
+            let barColor = y.isLive ? "bg-indigo-500" : colors[index % colors.length];
 
             return (
-              <div key={y.year} className="flex flex-col items-center justify-end h-full flex-1 min-w-[80px] group relative">
+              // Changed min-w-[80px] to min-w-[60px] and removed flex-1 to keep them together
+              <div key={y.year} className="flex flex-col items-center justify-end h-full min-w-[60px] group relative">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-10 bg-slate-800 text-white text-sm font-bold px-3 py-1.5 rounded-lg border border-slate-700 whitespace-nowrap z-10 pointer-events-none shadow-xl">{fmt(y.total)}</div>
-                <div className="w-full max-w-[60px] bg-slate-800/50 rounded-t-lg relative flex items-end justify-center" style={{ height: '100%' }}>
+                <div className="w-full max-w-[50px] bg-slate-800/50 rounded-t-lg relative flex items-end justify-center" style={{ height: '100%' }}>
+                  {/* Height strictly based on amount */}
                   <div className={`w-full rounded-t-lg transition-all duration-700 ${barColor}`} style={{ height: `${Math.max(pct, 2)}%` }} />
                 </div>
                 <div className="mt-4 text-center">
@@ -120,12 +121,16 @@ export default async function YearHistoryPage() {
         </div>
         
         <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {yearHistoryList.slice().reverse().map(y => (
-            <div key={y.year} className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
-              <p className="text-xs text-slate-400 mb-1">{y.year} {y.isLive ? "(Live)" : "Total"}</p>
-              <p className="text-xl font-bold text-white">{fmt(y.total)}</p>
-            </div>
-          ))}
+          {yearHistoryList.slice().reverse().map((y, index) => {
+            const reverseIndex = yearHistoryList.length - 1 - index;
+            let barColor = y.isLive ? "text-indigo-400" : "text-slate-400";
+            return (
+              <div key={y.year} className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                <p className="text-xs text-slate-400 mb-1">{y.year} {y.isLive ? "(Live)" : "Total"}</p>
+                <p className={`text-xl font-bold ${barColor}`}>{fmt(y.total)}</p>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
