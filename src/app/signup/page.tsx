@@ -112,11 +112,11 @@ export default function SignupPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-300">Email Address (Optional)</label>
             <div className="relative">
-              <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="john@gmail.com"
+              <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="Gerald@gmail.com"
                 className={`w-full rounded-lg border bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none transition-all focus:border-indigo-500 ${form.email ? (isValidEmail ? 'border-emerald-500' : 'border-red-500') : 'border-slate-700'}`} />
               <InputStatus isValid={isValidEmail} value={form.email} />
             </div>
-            {form.email && !isValidEmail && <p className="text-xs text-red-400 mt-1">Enter a valid email (e.g. john@gmail.com).</p>}
+            {form.email && !isValidEmail && <p className="text-xs text-red-400 mt-1">Enter a valid email (e.g. Geoffrey@gmail.com).</p>}
           </div>
 
           {/* ID & Phone */}
