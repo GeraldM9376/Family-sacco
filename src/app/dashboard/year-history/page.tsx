@@ -58,16 +58,14 @@ export default async function YearHistoryPage() {
   const user = await prisma.user.findUnique({ 
     where: { id: userId }, 
     include: { 
-      payments: { where: { status: "approved" }, orderBy: { paidOn: "asc" } }, // Ascending for stacked blocks
+      payments: { where: { status: "approved" }, orderBy: { paidOn: "asc" } },
       yearHistories: { orderBy: { year: "asc" } } 
     } 
   });
   if (!user) return <p className="text-white p-8">Loading…</p>;
 
-  // 1. Build the list of years
   const yearHistoryList = user.yearHistories.map(y => ({ year: y.year, total: y.account2Total, isLive: false, payments: [] as any[] }));
   
-  // Add live year
   const currentYearStart = new Date(currentSaccoYearLabel - 1, 11, 1);
   const currentYearPayments = user.payments.filter(p => new Date(p.paidOn) >= currentYearStart && new Date(p.paidOn) < new Date(currentSaccoYearLabel, 11, 1));
   
@@ -84,8 +82,6 @@ export default async function YearHistoryPage() {
   }
   yearHistoryList.push({ year: currentSaccoYearLabel, total: liveYearTotal, isLive: true, payments: livePayments });
 
-  // Optional: Populate payments for closed years if you want stacked bars there too
-  // (This loops through all payments and assigns them to the correct closed year)
   user.payments.forEach(p => {
     try {
       const b = JSON.parse(p.breakdown || "{}");
@@ -103,8 +99,6 @@ export default async function YearHistoryPage() {
   });
 
   const maxYearTotal = Math.max(...yearHistoryList.map(y => y.total), 1);
-  
-  // Colors for the bars
   const colors = ["bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-amber-500", "bg-rose-500", "bg-cyan-500"];
 
   return (
@@ -116,35 +110,38 @@ export default async function YearHistoryPage() {
 
       <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8">
         
-        {/* The Bar Chart Area */}
-        <div className="flex items-end gap-6 h-80 pb-4 px-4 overflow-x-auto border-b border-slate-800">
+        {/* Bar Chart Area - Using flex-1 for even spacing */}
+        <div className="flex items-end justify-around gap-4 h-80 pb-4 border-b border-slate-800">
           {yearHistoryList.map((y, index) => {
+            // Calculate height percentage (0% if amount is 0)
             const pct = (y.total / maxYearTotal) * 100;
             let barColor = y.isLive ? "bg-indigo-500" : colors[index % colors.length];
 
             return (
-              <div key={y.year} className="flex flex-col items-center justify-end h-full min-w-[80px] group relative">
-                {/* The Bar */}
-                <div className="w-full max-w-[60px] bg-slate-800/50 rounded-t-lg relative flex flex-col justify-end" style={{ height: '100%' }}>
-                  <div className={`w-full rounded-t-lg transition-all duration-700 ${barColor} flex flex-col-reverse`} style={{ height: `${Math.max(pct, 2)}%` }}>
+              <div key={y.year} className="flex flex-col items-center justify-end h-full flex-1 max-w-[100px] group relative">
+                
+                {/* The Bar Container */}
+                <div className="w-full bg-slate-800/50 rounded-t-lg relative flex flex-col justify-end" style={{ height: '100%' }}>
+                  
+                  {/* The Colored Bar - height strictly based on amount */}
+                  <div className={`w-full rounded-t-lg transition-all duration-700 ${barColor} flex flex-col-reverse`} style={{ height: `${pct}%` }}>
                     
                     {/* Stacked Payments inside the bar */}
                     {y.payments.map((payment: any, pIndex: number) => {
-                      const paymentPct = (payment.amount / maxYearTotal) * 100;
+                      // The height of each block is proportional to the total
+                      const paymentPct = (payment.amount / y.total) * 100;
                       return (
                         <div 
                           key={pIndex} 
-                          className="w-full border-t border-slate-900/50 hover:brightness-125 transition-all relative group/block"
+                          className="w-full border-t border-slate-900/30 hover:brightness-125 transition-all relative group/block"
                           style={{ height: `${paymentPct}%` }}
                         >
-                          {/* Tooltip on the specific payment block */}
                           <div className="absolute opacity-0 group-hover/block:opacity-100 transition-opacity bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-950 text-white text-xs px-2 py-1 rounded shadow-xl border border-slate-700 whitespace-nowrap z-50 pointer-events-none">
                             + {fmt(payment.amount)}
                           </div>
                         </div>
                       );
                     })}
-
                   </div>
                 </div>
                 
@@ -158,14 +155,14 @@ export default async function YearHistoryPage() {
           })}
         </div>
         
-        {/* The Cards aligned under the bars */}
-        <div className="flex gap-6 mt-8 px-4 overflow-x-auto pb-4">
+        {/* Cards aligned underneath using the exact same flex-1 properties */}
+        <div className="flex justify-around gap-4 mt-8">
           {yearHistoryList.map((y, index) => {
             let textColor = y.isLive ? "text-indigo-400" : "text-slate-300";
             return (
-              <div key={y.year} className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 min-w-[80px] w-full max-w-[140px] flex-shrink-0">
+              <div key={y.year} className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 flex-1 max-w-[100px]">
                 <p className="text-xs text-slate-400 mb-1">{y.year} {y.isLive ? "(Live)" : "Total"}</p>
-                <p className={`text-xl font-bold ${textColor}`}>{fmt(y.total)}</p>
+                <p className={`text-xl font-bold ${textColor} truncate`}>{fmt(y.total)}</p>
               </div>
             );
           })}
