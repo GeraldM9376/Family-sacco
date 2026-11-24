@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     });
     
     if (!user) {
-      return NextResponse.json({ error: "No user found with that ID number." }, { status: 404 });
+      return NextResponse.json({ error: "No user found with that Member Number." }, { status: 404 });
     }
 
     const userLoans = await prisma.loan.findMany({

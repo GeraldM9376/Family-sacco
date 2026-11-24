@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   if (!idNumber) return NextResponse.json({ error: "Member Number is required." }, { status: 400 });
 
   const user = await prisma.user.findUnique({ where: { idNumber } });
-  if (!user) return NextResponse.json({ error: "No account found with that ID." }, { status: 404 });
+  if (!user) return NextResponse.json({ error: "No account found with that Member Number." }, { status: 404 });
 
   const setting = await prisma.setting.findUnique({ where: { id: 1 } });
   const adminPhone = setting?.sendMoneyTo || "Admin";

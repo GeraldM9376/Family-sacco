@@ -22,7 +22,7 @@ export default function LoginPage() {
       redirect: false,
     });
     setLoading(false);
-    if (res?.error) return setErr("Invalid ID number or password.");
+    if (res?.error) return setErr("Invalid Member Number or password.");
     router.push("/redirect");
   }
 

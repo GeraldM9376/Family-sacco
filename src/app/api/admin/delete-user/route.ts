@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     });
 
     if (!userById) {
-      return NextResponse.json({ error: "Invalid User ID. No account found with this ID." }, { status: 404 });
+      return NextResponse.json({ error: "Invalid User ID. No account found with this Member Number." }, { status: 404 });
     }
 
     // 2. Check if phone number matches
