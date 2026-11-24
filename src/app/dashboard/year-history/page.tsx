@@ -100,7 +100,9 @@ export default async function YearHistoryPage() {
   });
 
   const maxYearTotal = Math.max(...yearHistoryList.map(y => y.total), 1);
-  const colors = ["bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-amber-500", "bg-rose-500", "bg-cyan-500"];
+  
+  // The colors for the sections inside the bars
+  const sectionColors = ["bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-amber-500", "bg-rose-500", "bg-cyan-500"];
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-10 space-y-8">
@@ -111,25 +113,26 @@ export default async function YearHistoryPage() {
 
       <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8">
         
-        {/* Bar Chart Area - Increased max-width of individual columns */}
         <div className="flex items-end justify-around gap-4 h-80 pb-4 border-b border-slate-800">
           {yearHistoryList.map((y, index) => {
             const pct = (y.total / maxYearTotal) * 100;
-            let barColor = y.isLive ? "bg-indigo-500" : colors[index % colors.length];
 
             return (
               <div key={y.year} className="flex flex-col items-center justify-end h-full flex-1 max-w-[140px] group relative">
                 
                 <div className="w-full bg-slate-800/50 rounded-t-lg relative flex flex-col justify-end" style={{ height: '100%' }}>
                   
-                  <div className={`w-full rounded-t-lg transition-all duration-700 ${barColor} flex flex-col-reverse`} style={{ height: `${pct}%` }}>
+                  <div className={`w-full rounded-t-lg transition-all duration-700 flex flex-col-reverse`} style={{ height: `${pct}%` }}>
                     
+                    {/* Each payment is now a different color */}
                     {y.payments.map((payment: any, pIndex: number) => {
                       const paymentPct = (payment.amount / y.total) * 100;
+                      const blockColor = sectionColors[pIndex % sectionColors.length];
+                      
                       return (
                         <div 
                           key={pIndex} 
-                          className="w-full border-t border-slate-900/30 hover:brightness-125 transition-all relative group/block"
+                          className={`w-full border-t border-slate-900/30 hover:brightness-125 transition-all relative group/block ${blockColor}`}
                           style={{ height: `${paymentPct}%` }}
                         >
                           <div className="absolute opacity-0 group-hover/block:opacity-100 transition-opacity bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-950 text-white text-xs px-2 py-1 rounded shadow-xl border border-slate-700 whitespace-nowrap z-50 pointer-events-none">
@@ -150,7 +153,6 @@ export default async function YearHistoryPage() {
           })}
         </div>
         
-        {/* Cards aligned underneath - Increased max-width and removed truncate */}
         <div className="flex justify-around gap-4 mt-8">
           {yearHistoryList.map((y, index) => {
             let textColor = y.isLive ? "text-indigo-400" : "text-slate-300";
