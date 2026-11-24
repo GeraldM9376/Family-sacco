@@ -10,7 +10,6 @@ export default async function YearHistoryPage() {
   const userId = (s!.user as any).id;
   const now = new Date();
 
-  // Determine current SACCO year boundaries (Dec 1 -> Nov 30)
   let currentSaccoYearStart = new Date(now.getFullYear(), 11, 1); 
   if (now.getMonth() < 11) { 
     currentSaccoYearStart = new Date(now.getFullYear() - 1, 11, 1);
@@ -28,13 +27,10 @@ export default async function YearHistoryPage() {
   
   if (firstPayment && acc2) {
     let startYear = new Date(firstPayment.paidOn).getFullYear();
-    // If first payment was Dec, the cycle ends the NEXT year.
     if (new Date(firstPayment.paidOn).getMonth() >= 11) startYear += 1;
     
-    // Loop from the very first payment year up to the current year
     for (let y = startYear; y < currentSaccoYearLabel; y++) {
       if (!closedYears.includes(y)) {
-        // Cycle for label "2024" runs from Dec 1, 2023 to Nov 30, 2024
         const cycleStart = new Date(y - 1, 11, 1);
         const cycleEnd = new Date(y, 11, 1);
         
@@ -45,7 +41,6 @@ export default async function YearHistoryPage() {
           try { const b = JSON.parse(p.breakdown || "{}"); if (b.account2 > 0) yearAcc2Total += Number(b.account2); } catch {}
         });
 
-        // Only save to DB if there was actually money deposited that year
         if (yearAcc2Total > 0) {
           await prisma.yearHistory.create({ data: { userId, year: y, account2Total: yearAcc2Total } });
 
@@ -70,10 +65,8 @@ export default async function YearHistoryPage() {
   });
   if (!user) return <p className="text-white p-8">Loading…</p>;
 
-  // Build the list of years
   const yearHistoryList = user.yearHistories.map(y => ({ year: y.year, total: y.account2Total, isLive: false, payments: [] as any[] }));
   
-  // Add live year
   const currentYearStart = new Date(currentSaccoYearLabel - 1, 11, 1);
   const currentYearPayments = user.payments.filter(p => new Date(p.paidOn) >= currentYearStart && new Date(p.paidOn) < new Date(currentSaccoYearLabel, 11, 1));
   
@@ -88,11 +81,8 @@ export default async function YearHistoryPage() {
       } 
     } catch {}
   }
-  
-  // Only add the live year if it has payments OR if it's the current year we are in
   yearHistoryList.push({ year: currentSaccoYearLabel, total: liveYearTotal, isLive: true, payments: livePayments });
 
-  // Attach payments to closed years for the stacked bars
   user.payments.forEach(p => {
     try {
       const b = JSON.parse(p.breakdown || "{}");
@@ -121,22 +111,19 @@ export default async function YearHistoryPage() {
 
       <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8">
         
-        {/* Bar Chart Area */}
+        {/* Bar Chart Area - Increased max-width of individual columns */}
         <div className="flex items-end justify-around gap-4 h-80 pb-4 border-b border-slate-800">
           {yearHistoryList.map((y, index) => {
             const pct = (y.total / maxYearTotal) * 100;
             let barColor = y.isLive ? "bg-indigo-500" : colors[index % colors.length];
 
             return (
-              <div key={y.year} className="flex flex-col items-center justify-end h-full flex-1 max-w-[100px] group relative">
+              <div key={y.year} className="flex flex-col items-center justify-end h-full flex-1 max-w-[140px] group relative">
                 
-                {/* The Bar Container */}
                 <div className="w-full bg-slate-800/50 rounded-t-lg relative flex flex-col justify-end" style={{ height: '100%' }}>
                   
-                  {/* The Colored Bar */}
                   <div className={`w-full rounded-t-lg transition-all duration-700 ${barColor} flex flex-col-reverse`} style={{ height: `${pct}%` }}>
                     
-                    {/* Stacked Payments */}
                     {y.payments.map((payment: any, pIndex: number) => {
                       const paymentPct = (payment.amount / y.total) * 100;
                       return (
@@ -163,14 +150,14 @@ export default async function YearHistoryPage() {
           })}
         </div>
         
-        {/* Cards aligned underneath */}
+        {/* Cards aligned underneath - Increased max-width and removed truncate */}
         <div className="flex justify-around gap-4 mt-8">
           {yearHistoryList.map((y, index) => {
             let textColor = y.isLive ? "text-indigo-400" : "text-slate-300";
             return (
-              <div key={y.year} className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 flex-1 max-w-[100px]">
+              <div key={y.year} className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 flex-1 max-w-[140px] min-w-[100px]">
                 <p className="text-xs text-slate-400 mb-1">{y.year} {y.isLive ? "(Live)" : "Total"}</p>
-                <p className={`text-xl font-bold ${textColor} truncate`}>{fmt(y.total)}</p>
+                <p className={`text-lg md:text-xl font-bold ${textColor} whitespace-nowrap`}>{fmt(y.total)}</p>
               </div>
             );
           })}
