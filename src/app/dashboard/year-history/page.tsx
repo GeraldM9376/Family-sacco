@@ -100,8 +100,6 @@ export default async function YearHistoryPage() {
   });
 
   const maxYearTotal = Math.max(...yearHistoryList.map(y => y.total), 1);
-  
-  // The colors for the sections inside the bars
   const sectionColors = ["bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-amber-500", "bg-rose-500", "bg-cyan-500"];
 
   return (
@@ -113,6 +111,7 @@ export default async function YearHistoryPage() {
 
       <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8">
         
+        {/* Bar Chart Area */}
         <div className="flex items-end justify-around gap-4 h-80 pb-4 border-b border-slate-800">
           {yearHistoryList.map((y, index) => {
             const pct = (y.total / maxYearTotal) * 100;
@@ -120,11 +119,12 @@ export default async function YearHistoryPage() {
             return (
               <div key={y.year} className="flex flex-col items-center justify-end h-full flex-1 max-w-[140px] group relative">
                 
-                <div className="w-full bg-slate-800/50 rounded-t-lg relative flex flex-col justify-end" style={{ height: '100%' }}>
+                {/* Background Track - Added overflow-hidden and removed flex-col from here */}
+                <div className="w-full bg-slate-800/50 rounded-t-lg relative overflow-hidden flex items-end" style={{ height: '100%' }}>
                   
+                  {/* The Colored Stacked Bar - strictly 100% max height */}
                   <div className={`w-full rounded-t-lg transition-all duration-700 flex flex-col-reverse`} style={{ height: `${pct}%` }}>
                     
-                    {/* Each payment is now a different color */}
                     {y.payments.map((payment: any, pIndex: number) => {
                       const paymentPct = (payment.amount / y.total) * 100;
                       const blockColor = sectionColors[pIndex % sectionColors.length];
