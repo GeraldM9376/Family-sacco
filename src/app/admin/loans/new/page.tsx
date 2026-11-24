@@ -5,23 +5,41 @@ export default function NewLoanPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   
+  const [loanType, setLoanType] = useState("normal");
+  const [principal, setPrincipal] = useState("");
+  const [interest, setInterest] = useState("");
+  const [totalToPay, setTotalToPay] = useState("");
+  
   const [issuedOn, setIssuedOn] = useState("");
   const [periodMonths, setPeriodMonths] = useState("");
   const [dueDate, setDueDate] = useState("");
 
+  // Auto-calculate Total to Pay for Emergency loans
   useEffect(() => {
-    if (issuedOn && periodMonths) {
-      const issuedDate = new Date(issuedOn);
-      if (!isNaN(issuedDate.getTime())) {
-        const dueDateObj = new Date(issuedDate);
-        dueDateObj.setMonth(dueDateObj.getMonth() + Number(periodMonths));
-        const formatted = dueDateObj.toISOString().split("T")[0];
-        setDueDate(formatted);
+    if (loanType === "emergency") {
+      const p = Number(principal) || 0;
+      const i = Number(interest) || 0;
+      setTotalToPay(String(p + i));
+    }
+  }, [principal, interest, loanType]);
+
+  // Auto-calculate Due Date
+  useEffect(() => {
+    if (issuedOn) {
+      const months = loanType === "emergency" ? 4 : Number(periodMonths);
+      if (months > 0) {
+        const issuedDate = new Date(issuedOn);
+        if (!isNaN(issuedDate.getTime())) {
+          const dueDateObj = new Date(issuedDate);
+          dueDateObj.setMonth(dueDateObj.getMonth() + months);
+          const formatted = dueDateObj.toISOString().split("T")[0];
+          setDueDate(formatted);
+        }
       }
     } else {
       setDueDate("");
     }
-  }, [issuedOn, periodMonths]);
+  }, [issuedOn, periodMonths, loanType]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,6 +47,12 @@ export default function NewLoanPage() {
     setErr("");
     const fd = new FormData(e.currentTarget);
     const body = Object.fromEntries(fd.entries());
+
+    // If emergency, make sure we send the calculated total and period
+    if (loanType === "emergency") {
+      body.amountToPay = totalToPay;
+      body.periodMonths = "4";
+    }
 
     try {
       const res = await fetch("/api/admin/create-loan", {
@@ -57,13 +81,13 @@ export default function NewLoanPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="mb-1 block text-sm font-bold text-slate-300">User Member Number</label>
-            <input name="idNumber" required placeholder="e.g. 12345678"
+            <input name="idNumber" required placeholder="e.g. 123"
               className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-bold text-slate-300">Loan Type</label>
-            <select name="type" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
+            <select name="type" value={loanType} onChange={(e) => setLoanType(e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500">
               <option value="normal">Normal Loan</option>
               <option value="emergency">Emergency Loan</option>
             </select>
@@ -71,29 +95,46 @@ export default function NewLoanPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-bold text-slate-300">Amount Issued</label>
-              <input name="principal" type="number" required placeholder="e.g. 5000"
+              <label className="mb-1 block text-sm font-bold text-slate-300">Amount Issued (Principal)</label>
+              <input name="principal" type="number" required placeholder="e.g. 5000" value={principal} onChange={(e) => setPrincipal(e.target.value)}
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-bold text-slate-300">Total to Pay</label>
-              <input name="amountToPay" type="number" required placeholder="e.g. 5500"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
-            </div>
+            
+            {loanType === "emergency" ? (
+              <div>
+                <label className="mb-1 block text-sm font-bold text-slate-300">Fixed Interest Amount</label>
+                <input name="interestAmount" type="number" required placeholder="e.g. 1000" value={interest} onChange={(e) => setInterest(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
+              </div>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-bold text-slate-300">Total to Pay</label>
+              <input name="amountToPay" type="number" required placeholder="e.g. 5500" value={totalToPay} onChange={(e) => setTotalToPay(e.target.value)}
+                readOnly={loanType === "emergency"}
+                className={`w-full rounded-lg border border-slate-700 px-4 py-3 text-white outline-none focus:border-indigo-500 ${loanType === "emergency" ? 'bg-slate-800 text-slate-400 cursor-not-allowed' : 'bg-slate-950'}`} />
+            </div>
             <div>
               <label className="mb-1 block text-sm font-bold text-slate-300">Issued Date</label>
               <input name="issuedOn" type="date" required value={issuedOn} onChange={(e) => setIssuedOn(e.target.value)}
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
             </div>
+          </div>
+
+          {/* Only show Payment Period for Normal Loans */}
+          {loanType === "normal" ? (
             <div>
               <label className="mb-1 block text-sm font-bold text-slate-300">Payment Period (Months)</label>
               <input name="periodMonths" type="number" min="1" required value={periodMonths} onChange={(e) => setPeriodMonths(e.target.value)} placeholder="e.g. 5"
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500" />
             </div>
-          </div>
+          ) : (
+            <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-lg text-sm text-indigo-300">
+              <strong>Emergency Loan Format:</strong> Fixed at 4 months. The interest is divided equally across Months 1-3, and Month 4 includes the remaining interest + the full Principal.
+            </div>
+          )}
 
           <div>
             <label className="mb-1 block text-sm font-bold text-slate-300">Due Date (Auto-calculated)</label>
