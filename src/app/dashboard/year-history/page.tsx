@@ -10,9 +10,15 @@ export default async function YearHistoryPage() {
   const userId = (s!.user as any).id;
   const now = new Date();
 
+  // Determine current SACCO year boundaries (Dec 1 -> Nov 30)
+  // If we are in November 2026, the year started Dec 1, 2025 and ends Nov 30, 2026.
   let currentSaccoYearStart = new Date(now.getFullYear(), 11, 1); 
-  if (now.getMonth() < 11) currentSaccoYearStart = new Date(now.getFullYear() - 1, 11, 1);
-  const currentSaccoYearLabel = currentSaccoYearStart.getFullYear();
+  if (now.getMonth() < 11) { 
+    currentSaccoYearStart = new Date(now.getFullYear() - 1, 11, 1);
+  }
+  
+  // The label is the END year (e.g., Dec 2025 - Nov 2026 is labeled "2026")
+  const currentSaccoYearLabel = currentSaccoYearStart.getFullYear() + 1; 
 
   const userWithAccounts = await prisma.user.findUnique({ where: { id: userId }, include: { accounts: true, yearHistories: true } });
   if (!userWithAccounts) return <p className="text-white p-8">Loading…</p>;
@@ -24,13 +30,23 @@ export default async function YearHistoryPage() {
   
   if (firstPayment && acc2) {
     let startYear = new Date(firstPayment.paidOn).getFullYear();
-    if (new Date(firstPayment.paidOn).getMonth() < 11) startYear -= 1;
+    // If first payment was Jan-Nov, it belonged to the previous cycle (which ends that same year)
+    // Wait, if paid in Jan 2026, cycle started Dec 2025, ends Nov 2026 (Label 2026).
+    // So if paid in Jan 2026, the label is 2026.
+    if (new Date(firstPayment.paidOn).getMonth() < 11) {
+      // The cycle ends in the same year the payment was made
+    } else {
+      // Payment made in Dec 2025, cycle ends in 2026
+      startYear += 1;
+    }
     
     for (let y = startYear; y < currentSaccoYearLabel; y++) {
       if (!closedYears.includes(y)) {
-        const yearStart = new Date(y, 11, 1);
-        const yearEnd = new Date(y + 1, 11, 1);
-        const payments = await prisma.payment.findMany({ where: { userId, status: "approved", paidOn: { gte: yearStart, lt: yearEnd } } });
+        // If label is 2026, the cycle started Dec 1, 2025
+        const cycleStart = new Date(y - 1, 11, 1);
+        const cycleEnd = new Date(y, 11, 1);
+        
+        const payments = await prisma.payment.findMany({ where: { userId, status: "approved", paidOn: { gte: cycleStart, lt: cycleEnd } } });
         
         let yearAcc2Total = 0;
         payments.forEach(p => {
@@ -42,7 +58,7 @@ export default async function YearHistoryPage() {
         if (acc2.balance > 0) {
           await prisma.$transaction([
             prisma.account.update({ where: { id: acc2.id }, data: { balance: 0 } }),
-            prisma.withdrawal.create({ data: { userId, account2Amt: acc2.balance, totalAmount: acc2.balance, method: "Year End Reset", methodDetails: `Auto-archived for year ${y}`, paidOn: yearEnd, approvedAt: yearEnd, status: "approved" } })
+            prisma.withdrawal.create({ data: { userId, account2Amt: acc2.balance, totalAmount: acc2.balance, method: "Year End Reset", methodDetails: `Auto-archived for year ${y}`, paidOn: cycleEnd, approvedAt: cycleEnd, status: "approved" } })
           ]);
           acc2.balance = 0;
         }
@@ -54,7 +70,11 @@ export default async function YearHistoryPage() {
   if (!user) return <p className="text-white p-8">Loading…</p>;
 
   const yearHistoryList = user.yearHistories.map(y => ({ year: y.year, total: y.account2Total, isLive: false }));
-  const currentYearStart = new Date(currentSaccoYearLabel, 11, 1);
+  
+  // The current cycle started Dec 1 of the previous year
+  const currentYearStart = new Date(currentSaccoYearLabel - 1, 11, 1);
+  
+  // Calculate the live total for the CURRENT year
   const currentYearPayments = user.payments.filter(p => new Date(p.paidOn) >= currentYearStart);
   let liveYearTotal = 0;
   currentYearPayments.forEach(p => {
@@ -62,7 +82,10 @@ export default async function YearHistoryPage() {
   });
 
   yearHistoryList.push({ year: currentSaccoYearLabel, total: liveYearTotal, isLive: true });
+  
   const maxYearTotal = Math.max(...yearHistoryList.map(y => y.total), 1);
+  
+  // Find the PREVIOUS year's total to compare against
   const prevYearData = yearHistoryList.find(y => y.year === currentSaccoYearLabel - 1);
   const previousYearTotal = prevYearData ? prevYearData.total : 0;
 
